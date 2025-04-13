@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Tourze\JsonRPC\Core\Tests\Domain;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Validator\Constraints\Collection;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Type;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodParamsValidatorInterface;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodResolverInterface;
 use Tourze\JsonRPC\Core\Domain\MethodWithResultDocInterface;
+use Tourze\JsonRPC\Core\Domain\MethodWithValidatedParamsInterface;
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
@@ -112,5 +116,54 @@ class MethodInterfacesTest extends TestCase
         };
 
         $this->assertEquals('Returns a success indicator.', $method->resultDoc());
+    }
+
+    /**
+     * 测试带有参数验证的方法接口
+     */
+    public function testMethodWithValidatedParamsInterface(): void
+    {
+        $method = new class implements JsonRpcMethodInterface, MethodWithValidatedParamsInterface {
+            public function __invoke(JsonRpcRequest $request): mixed
+            {
+                return ['success' => true];
+            }
+
+            public function execute(): array
+            {
+                return ['success' => true];
+            }
+
+            public function getParamsConstraint(): Collection
+            {
+                return new Collection([
+                    'fields' => [
+                        'username' => [
+                            new NotBlank(),
+                            new Type('string'),
+                        ],
+                        'email' => [
+                            new NotBlank(),
+                            new Type('string'),
+                        ],
+                    ],
+                    'allowExtraFields' => false,
+                    'allowMissingFields' => false,
+                ]);
+            }
+        };
+
+        $constraint = $method->getParamsConstraint();
+
+        $this->assertInstanceOf(Collection::class, $constraint);
+        $this->assertIsArray($constraint->fields);
+        $this->assertArrayHasKey('username', $constraint->fields);
+        $this->assertArrayHasKey('email', $constraint->fields);
+        $this->assertFalse($constraint->allowExtraFields);
+        $this->assertFalse($constraint->allowMissingFields);
+
+        // 验证username字段存在约束条件，但不检查具体类型
+        // 因为Symfony Validator可能会将约束条件包装在Required对象中
+        $this->assertNotEmpty($constraint->fields['username']);
     }
 }
