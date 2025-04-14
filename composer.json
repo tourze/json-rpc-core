@@ -11,7 +11,8 @@
     "symfony/service-contracts": "^2.5 || ^3",
     "symfony/property-access": "^6.4",
     "tourze/arrayable": "0.0.*",
-    "tourze/backtrace-helper": "~0.0.5"
+    "tourze/backtrace-helper": "~0.0.5",
+    "psr/log": "^3|^2|^1"
   },
   "autoload": {
     "psr-4": {
