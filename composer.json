@@ -12,7 +12,8 @@
     "symfony/property-access": "^6.4",
     "tourze/arrayable": "0.0.*",
     "tourze/backtrace-helper": "~0.0.5",
-    "psr/log": "^3|^2|^1"
+    "psr/log": "^3|^2|^1",
+    "nesbot/carbon": "^2.72 || ^3"
   },
   "autoload": {
     "psr-4": {
