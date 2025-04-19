@@ -34,3 +34,5 @@ jobs:
 
       - name: ComposerRequireChecker
         uses: docker://webfactory/composer-require-checker:4.5.0
+        with:
+          args: --config-file=composer-require-checker.js
