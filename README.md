@@ -1,53 +1,51 @@
 # JSON-RPC Core
 
-本库提供符合 [JSON-RPC 2.0 规范](https://www.jsonrpc.org/specification) 的核心组件，用于构建 JSON-RPC 服务器和客户端。
+This library provides core components compliant with the [JSON-RPC 2.0 specification](https://www.jsonrpc.org/specification) for building JSON-RPC servers and clients in PHP.
 
-## 安装
+## Installation
 
 ```bash
 composer require tourze/json-rpc-core
 ```
 
-## 特性
+## Features
 
-- 完全符合 JSON-RPC 2.0 规范
-- 支持所有 JSON-RPC 请求类型：单个请求、批量请求和通知
-- 提供错误处理机制，包括所有标准 JSON-RPC 错误类型
-- 灵活的方法解析接口
-- 清晰的面向对象 API
+- Fully compliant with JSON-RPC 2.0 specification
+- Supports all JSON-RPC request types: single, batch, and notification
+- Robust error handling for all standard JSON-RPC error types
+- Flexible method resolution interfaces
+- Clean object-oriented API
 
-## 组件
+## Components
 
-本库包含以下主要组件：
+### Models
 
-### 模型类
+- `JsonRpcRequest` - Represents a JSON-RPC request
+- `JsonRpcResponse` - Represents a JSON-RPC response
+- `JsonRpcParams` - Wraps request parameters
+- `JsonRpcCallRequest` - Handles batch requests
+- `JsonRpcCallResponse` - Handles batch responses
 
-- `JsonRpcRequest` - 表示一个 JSON-RPC 请求
-- `JsonRpcResponse` - 表示一个 JSON-RPC 响应
-- `JsonRpcParams` - 包装请求参数
-- `JsonRpcCallRequest` - 处理批量请求
-- `JsonRpcCallResponse` - 处理批量响应
+### Domain Interfaces
 
-### 领域接口
+- `JsonRpcMethodInterface` - Defines the interface for JSON-RPC methods
+- `JsonRpcMethodResolverInterface` - Resolves method names to implementations
+- `JsonRpcMethodParamsValidatorInterface` - Validates method parameters
+- `MethodWithValidatedParamsInterface` - Methods with parameter validation
+- `MethodWithResultDocInterface` - Methods with result documentation
 
-- `JsonRpcMethodInterface` - 定义 JSON-RPC 方法的接口
-- `JsonRpcMethodResolverInterface` - 解析方法名到具体方法实现
-- `JsonRpcMethodParamsValidatorInterface` - 验证方法参数
-- `MethodWithValidatedParamsInterface` - 带有参数验证的方法
-- `MethodWithResultDocInterface` - 带有结果文档的方法
+### Exceptions
 
-### 异常类
+- `JsonRpcException` - Base JSON-RPC exception
+- `JsonRpcParseErrorException` - Parse error exception
+- `JsonRpcInvalidRequestException` - Invalid request exception
+- `JsonRpcMethodNotFoundException` - Method not found exception
+- `JsonRpcInvalidParamsException` - Invalid params exception
+- `JsonRpcInternalErrorException` - Internal error exception
 
-- `JsonRpcException` - 基础 JSON-RPC 异常
-- `JsonRpcParseErrorException` - 解析错误异常
-- `JsonRpcInvalidRequestException` - 无效请求异常
-- `JsonRpcMethodNotFoundException` - 方法未找到异常
-- `JsonRpcInvalidParamsException` - 无效参数异常
-- `JsonRpcInternalErrorException` - 内部错误异常
+## Usage Example
 
-## 使用示例
-
-### 创建一个 JSON-RPC 方法
+### Creating a JSON-RPC Method
 
 ```php
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
