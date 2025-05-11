@@ -3,6 +3,7 @@
 namespace Tourze\JsonRPC\Core\Event;
 
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
+use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
 /**
  * 在JsonRPC方法执行前触发
@@ -49,5 +50,17 @@ class BeforeMethodApplyEvent extends MethodInterruptEvent
     public function setName(string $name): void
     {
         $this->name = $name;
+    }
+
+    private JsonRpcRequest $request;
+
+    public function getRequest(): JsonRpcRequest
+    {
+        return $this->request;
+    }
+
+    public function setRequest(JsonRpcRequest $request): void
+    {
+        $this->request = $request;
     }
 }

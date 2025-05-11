@@ -122,6 +122,7 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
         // 执行前触发
         $beforeEvent = new BeforeMethodApplyEvent();
         $beforeEvent->setMethod($this);
+        $beforeEvent->setRequest($request);
         $beforeEvent->setName($request->getMethod());
         $beforeEvent->setParams($request->getParams());
         $this->getEventDispatcher()->dispatch($beforeEvent);
@@ -137,6 +138,7 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
         // 执行后触发
         $afterEvent = new AfterMethodApplyEvent();
         $afterEvent->setMethod($this);
+        $afterEvent->setRequest($request);
         $afterEvent->setName($request->getMethod());
         $afterEvent->setParams($beforeEvent->getParams());
         $afterEvent->setResult($res);
