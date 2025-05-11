@@ -4,6 +4,7 @@ namespace Tourze\JsonRPC\Core\Procedure;
 
 use Psr\Log\LoggerInterface;
 use Symfony\Component\PropertyAccess\Exception\InvalidArgumentException;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\AtLeastOneOf;
@@ -38,10 +39,11 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
         return $this->container->get(__METHOD__);
     }
 
-    #[SubscribedService]
+    private static PropertyAccessor $propertyAccessor;
+
     private function getPropertyAccessor(): PropertyAccessor
     {
-        return $this->container->get(__METHOD__);
+        return static::$propertyAccessor ??= PropertyAccess::createPropertyAccessor();
     }
 
     #[SubscribedService]
