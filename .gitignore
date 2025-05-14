@@ -1,2 +1,10 @@
-.phpunit.cache
+var/
+vendor/
+.idea/
 composer.lock
+.php-cs-fixer.cache
+.phpunit.result.cache
+phpunit.xml
+.phpunit.cache
+*.cache
+*.log
