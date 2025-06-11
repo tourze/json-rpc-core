@@ -127,7 +127,7 @@ class JsonRpcWorkflowTest extends TestCase
                     $response->setResult($result);
                 } catch (JsonRpcException $e) {
                     $response->setError($e);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     // 将普通异常包装为JSON-RPC异常
                     $jsonRpcException = new JsonRpcException(
                         -32000,
@@ -226,7 +226,7 @@ class JsonRpcWorkflowTest extends TestCase
                     $response->setResult($result);
                 } catch (JsonRpcException $e) {
                     $response->setError($e);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     // 将普通异常包装为JSON-RPC异常
                     $jsonRpcException = new JsonRpcException(
                         -32000,
@@ -320,7 +320,7 @@ class JsonRpcWorkflowTest extends TestCase
                         $methodName = $item->getMethod();
                         $method = $methodResolver($methodName);
                         $method($item); // 执行但忽略结果
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
                         // 通知不需要返回错误
                     }
                 } else {
@@ -335,7 +335,7 @@ class JsonRpcWorkflowTest extends TestCase
                         $response->setResult($result);
                     } catch (JsonRpcException $e) {
                         $response->setError($e);
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
                         $jsonRpcException = new JsonRpcException(-32000, $e->getMessage());
                         $response->setError($jsonRpcException);
                     }
