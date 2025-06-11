@@ -93,7 +93,7 @@ try {
     $response->setResult($result);
 } catch (JsonRpcException $e) {
     $response->setError($e);
-} catch (\Throwable $e) {
+} catch  (\Throwable $e) {
     // 将普通异常包装为 JSON-RPC 异常
     $jsonRpcException = new JsonRpcException(-32000, $e->getMessage());
     $response->setError($jsonRpcException);
