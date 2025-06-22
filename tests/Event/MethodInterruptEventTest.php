@@ -122,7 +122,9 @@ class MethodInterruptEventTest extends TestCase
         $methodProperty = $reflection->getProperty('method');
         
         $this->assertTrue($methodProperty->isPrivate());
-        $this->assertEquals(JsonRpcMethodInterface::class, $methodProperty->getType()->getName());
+        $reflectionType = $methodProperty->getType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $reflectionType);
+        $this->assertEquals(JsonRpcMethodInterface::class, $reflectionType->getName());
     }
 
     /**

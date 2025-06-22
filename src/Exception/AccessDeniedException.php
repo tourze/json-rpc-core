@@ -15,7 +15,7 @@ class AccessDeniedException extends JsonRpcException
         parent::__construct(
             self::ERROR_CODE,
             self::ERROR_MESSAGE,
-            $previousException ? [self::DATA_PREVIOUS_KEY => $previousException->getMessage()] : []
+            $previousException !== null ? [self::DATA_PREVIOUS_KEY => $previousException->getMessage()] : []
         );
     }
 }

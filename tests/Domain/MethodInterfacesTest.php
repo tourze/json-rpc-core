@@ -49,7 +49,6 @@ class MethodInterfacesTest extends TestCase
 
         // 确保验证方法可以被调用，并返回空数组（没有错误）
         $violations = $validator->validate($request, $method);
-        $this->assertIsArray($violations);
         $this->assertEmpty($violations);
     }
 
@@ -75,9 +74,15 @@ class MethodInterfacesTest extends TestCase
             {
             }
 
-            public function resolve(string $methodName): JsonRpcMethodInterface
+            public function resolve(string $methodName): ?JsonRpcMethodInterface
             {
-                return $this->testMethod;
+                // 返回 null 表示方法未找到，返回实例表示找到了方法
+                return $methodName === 'test.method' ? $this->testMethod : null;
+            }
+
+            public function getAllMethodNames(): array
+            {
+                return ['test.method'];
             }
         };
 
@@ -156,7 +161,6 @@ class MethodInterfacesTest extends TestCase
         $constraint = $method->getParamsConstraint();
 
         $this->assertInstanceOf(Collection::class, $constraint);
-        $this->assertIsArray($constraint->fields);
         $this->assertArrayHasKey('username', $constraint->fields);
         $this->assertArrayHasKey('email', $constraint->fields);
         $this->assertFalse($constraint->allowExtraFields);

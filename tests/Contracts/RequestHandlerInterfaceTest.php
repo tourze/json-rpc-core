@@ -138,7 +138,6 @@ class RequestHandlerInterfaceTest extends TestCase
         
         // 验证方法可以处理复杂参数
         $result = $method($request);
-        $this->assertIsArray($result);
         $this->assertArrayHasKey('echo', $result);
     }
 

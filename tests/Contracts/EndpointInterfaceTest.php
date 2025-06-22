@@ -128,8 +128,6 @@ class EndpointInterfaceTest extends TestCase
         $payload = '{"jsonrpc":"2.0","method":"echo","id":"test"}';
 
         $result = $endpoint->index($payload);
-
-        $this->assertIsString($result);
         $this->assertJson($result);
     }
 
@@ -139,10 +137,11 @@ class EndpointInterfaceTest extends TestCase
         $payload = '{}';
 
         $result = $endpoint->index($payload);
-
-        $this->assertIsString($result);
         // 具体的错误处理取决于实现
         $decoded = json_decode($result, true);
+        
+        // 验证返回了有效的 JSON
         $this->assertIsArray($decoded);
+        $this->assertArrayHasKey('jsonrpc', $decoded);
     }
 } 

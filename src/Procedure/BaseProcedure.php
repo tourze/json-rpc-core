@@ -39,11 +39,11 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
         return $this->container->get(__METHOD__);
     }
 
-    private static PropertyAccessor $propertyAccessor;
+    private static ?PropertyAccessor $propertyAccessor = null;
 
     private function getPropertyAccessor(): PropertyAccessor
     {
-        return static::$propertyAccessor ??= PropertyAccess::createPropertyAccessor();
+        return self::$propertyAccessor ??= PropertyAccess::createPropertyAccessor();
     }
 
     #[SubscribedService]
@@ -72,7 +72,7 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
     public function assignParams(?array $paramList = null): void
     {
         $this->paramList = null;
-        if ($paramList) {
+        if ($paramList !== null && $paramList !== []) {
             foreach ($paramList as $k => $v) {
                 // TODO 在这里判断一下，成员是不是一个Entity，如果是的话，尝试读取并写入
                 if ($this->getPropertyAccessor()->isWritable($this, $k)) {
@@ -91,7 +91,7 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
         foreach ($this->getParamsConstraint()->fields as $field => $rules) {
             try {
                 $v = $this->{$field};
-            } catch (\Throwable $e) {
+            } catch (\Throwable $e) { // @phpstan-ignore-line
                 $this->getBaseProcedureLogger()->warning('读取参数时报错', [
                     'procedure' => get_class($this),
                     'field' => $field,
@@ -109,9 +109,9 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
                     continue;
                 }
                 $errors = $this->getValidator()->validate($v, $rule);
-                if ((is_countable($errors) ? count($errors) : 0) > 0) {
+                if (count($errors) > 0) {
                     $error = $errors->get(0);
-                    throw new ApiException("参数{$field}校验不通过：{$error}");
+                    throw new ApiException("参数{$field}校验不通过：" . $error->getMessage());
                 }
             }
         }
@@ -157,7 +157,7 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
             $AtLeastOneOf = [];
             foreach ($type->getTypes() as $subType) {
                 $tmp = static::genTypeValidatorByReflectionType($subType);
-                if ($tmp) {
+                if ($tmp !== null) {
                     $AtLeastOneOf[] = $tmp;
                 }
             }
@@ -166,11 +166,14 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
         }
 
         // 只有内建类型，我们才支持输入
-        if (!$type->isBuiltin()) {
-            return null;
+        if ($type instanceof \ReflectionNamedType) {
+            if (!$type->isBuiltin()) {
+                return null;
+            }
+            return static::genTypeValidatorByTypeName($type->getName());
         }
 
-        return static::genTypeValidatorByTypeName($type->getName());
+        return null;
     }
 
     protected static function genTypeValidatorByTypeName(string $typeName): Type|null
@@ -247,7 +250,7 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
             }
 
             $tmp = $this->getPropertyConstraint($property);
-            if ($tmp) {
+            if ($tmp !== null) {
                 $fields[$property->getName()] = $tmp;
             }
         }
@@ -270,14 +273,16 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
         $all = [];
 
         // 基础类型，基础处理啦
-        if ($property->getType()) {
-            if ($tmp = static::genTypeValidatorByReflectionType($property->getType())) {
+        if ($property->getType() !== null) {
+            $tmp = static::genTypeValidatorByReflectionType($property->getType());
+            if ($tmp !== null) {
                 $all[] = static::makeTypeCompatible($tmp);
             }
         }
 
         // 如果在成员那里有定义Asset规则，那就直接加入
-        if ($property->getType() && method_exists($property->getType(), 'isBuiltin') && $property->getType()->isBuiltin()) {
+        $reflectionType = $property->getType();
+        if ($reflectionType instanceof \ReflectionNamedType && $reflectionType->isBuiltin()) {
             foreach ($property->getAttributes() as $attribute) {
                 if (is_subclass_of($attribute->getName(), Constraint::class)) {
                     $all[] = $attribute->newInstance();
@@ -291,7 +296,8 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
             } else {
                 // TODO 多个规则的话，会有问题，报一个类型不匹配的校验错误，暂时没办法解决，先跳过，只使用基础类型
                 // $fields[$property->getName()] = new All($all);
-                if ($tmp = static::genTypeValidatorByReflectionType($property->getType())) {
+                $tmp = static::genTypeValidatorByReflectionType($property->getType());
+                if ($tmp !== null) {
                     return static::makeTypeCompatible($tmp);
                 }
             }
@@ -314,8 +320,9 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
         /** @var MethodParam $MethodParam */
         $MethodParam = $MethodParam[0]->newInstance();
 
-        $type = method_exists($property->getType(), 'getName')
-            ? $property->getType()->getName()
+        $reflectionType = $property->getType();
+        $type = ($reflectionType instanceof \ReflectionNamedType)
+            ? $reflectionType->getName()
             : 'mixed';
 
         $min = $max = null;

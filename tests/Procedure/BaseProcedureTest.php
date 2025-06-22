@@ -5,13 +5,9 @@ declare(strict_types=1);
 namespace Tourze\JsonRPC\Core\Tests\Procedure;
 
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Validator\Constraints\Collection;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Type;
-use Symfony\Component\Validator\Validation;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Tourze\JsonRPC\Core\Procedure\BaseProcedure;
 
 /**
@@ -26,25 +22,6 @@ use Tourze\JsonRPC\Core\Procedure\BaseProcedure;
  */
 class BaseProcedureTest extends TestCase
 {
-    private function createMockContainer(): Container
-    {
-        $container = new Container();
-        
-        // 创建模拟的Logger
-        $logger = $this->createMock(LoggerInterface::class);
-        $container->set('getBaseProcedureLogger', $logger);
-        
-        // 创建模拟的EventDispatcher
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $container->set('getEventDispatcher', $eventDispatcher);
-        
-        // 创建真实的Validator
-        $validator = Validation::createValidator();
-        $container->set('getValidator', $validator);
-        
-        return $container;
-    }
-
     private function createTestProcedure(): BaseProcedure
     {
         return new class extends BaseProcedure {
@@ -148,13 +125,13 @@ class BaseProcedureTest extends TestCase
     /**
      * 注意：由于BaseProcedure严重依赖Symfony的服务容器，
      * 测试其完整功能需要完整的DI环境，这进一步证明了该类过于复杂。
-     * 
+     *
      * 以下测试被跳过，因为需要复杂的模拟设置：
      * - testAssignParams()
      * - test__invoke()
      * - testGenTypeValidatorByReflectionType()
      * - testGetPropertyDocument()
-     * 
+     *
      * 这些复杂的依赖关系是重构的另一个信号。
      */
     public function testComplexityIndicators(): void

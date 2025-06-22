@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Event;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
@@ -48,7 +48,7 @@ class MethodExecuteSuccessEventTest extends TestCase
     public function testSetAndGetStartTime(): void
     {
         $event = new MethodExecuteSuccessEvent();
-        $startTime = Carbon::now();
+        $startTime = CarbonImmutable::now();
 
         $event->setStartTime($startTime);
 
@@ -59,7 +59,7 @@ class MethodExecuteSuccessEventTest extends TestCase
     public function testSetAndGetEndTime(): void
     {
         $event = new MethodExecuteSuccessEvent();
-        $endTime = Carbon::now();
+        $endTime = CarbonImmutable::now();
 
         $event->setEndTime($endTime);
 
@@ -87,8 +87,8 @@ class MethodExecuteSuccessEventTest extends TestCase
     {
         $event = new MethodExecuteSuccessEvent();
         
-        $startTime = Carbon::now()->subSeconds(2);
-        $endTime = Carbon::now();
+        $startTime = CarbonImmutable::now()->subSeconds(2);
+        $endTime = CarbonImmutable::now();
         $result = ['executed' => true, 'data' => ['id' => 456]];
         $method = $this->createMockMethod();
         $request = new JsonRpcRequest();
@@ -154,8 +154,8 @@ class MethodExecuteSuccessEventTest extends TestCase
     {
         $event = new MethodExecuteSuccessEvent();
         
-        $startTime = Carbon::parse('2023-01-01 10:00:00');
-        $endTime = Carbon::parse('2023-01-01 10:00:05');
+        $startTime = CarbonImmutable::parse('2023-01-01 10:00:00');
+        $endTime = CarbonImmutable::parse('2023-01-01 10:00:05');
 
         $event->setStartTime($startTime);
         $event->setEndTime($endTime);

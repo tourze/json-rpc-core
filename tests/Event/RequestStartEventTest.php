@@ -155,7 +155,6 @@ class RequestStartEventTest extends TestCase
         $event->setPayload($validPayload);
         
         $decoded = json_decode($event->getPayload(), true);
-        $this->assertIsArray($decoded);
         $this->assertEquals('2.0', $decoded['jsonrpc']);
         $this->assertEquals('validate', $decoded['method']);
         $this->assertEquals('valid', $decoded['id']);

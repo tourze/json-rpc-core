@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Event;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Event\MethodExecuteFailureEvent;
@@ -57,7 +57,7 @@ class MethodExecuteFailureEventTest extends TestCase
     public function testSetAndGetStartTime(): void
     {
         $event = new MethodExecuteFailureEvent();
-        $startTime = Carbon::now();
+        $startTime = CarbonImmutable::now();
 
         $event->setStartTime($startTime);
 
@@ -67,7 +67,7 @@ class MethodExecuteFailureEventTest extends TestCase
     public function testSetAndGetEndTime(): void
     {
         $event = new MethodExecuteFailureEvent();
-        $endTime = Carbon::now();
+        $endTime = CarbonImmutable::now();
 
         $event->setEndTime($endTime);
 
@@ -78,8 +78,8 @@ class MethodExecuteFailureEventTest extends TestCase
     {
         $event = new MethodExecuteFailureEvent();
         
-        $startTime = Carbon::now()->subSeconds(1);
-        $endTime = Carbon::now();
+        $startTime = CarbonImmutable::now()->subSeconds(1);
+        $endTime = CarbonImmutable::now();
         $exception = new \RuntimeException('Database connection failed');
         $method = $this->createMockMethod();
         $request = new JsonRpcRequest();
@@ -134,8 +134,8 @@ class MethodExecuteFailureEventTest extends TestCase
     {
         $event = new MethodExecuteFailureEvent();
         
-        $startTime = Carbon::parse('2023-01-01 10:00:00');
-        $endTime = Carbon::parse('2023-01-01 10:00:03');
+        $startTime = CarbonImmutable::parse('2023-01-01 10:00:00');
+        $endTime = CarbonImmutable::parse('2023-01-01 10:00:03');
 
         $event->setStartTime($startTime);
         $event->setEndTime($endTime);
