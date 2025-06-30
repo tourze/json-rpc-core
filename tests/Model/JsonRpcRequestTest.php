@@ -7,6 +7,7 @@ namespace Tourze\JsonRPC\Core\Tests\Model;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
+use Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException;
 
 class JsonRpcRequestTest extends TestCase
 {
@@ -38,7 +39,7 @@ class JsonRpcRequestTest extends TestCase
 
     public function testSetInvalidId(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(JsonRpcArgumentException::class);
         $this->expectExceptionMessage('Id must be either an int or a string');
 
         $request = new JsonRpcRequest();

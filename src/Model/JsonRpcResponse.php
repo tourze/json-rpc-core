@@ -3,6 +3,7 @@
 namespace Tourze\JsonRPC\Core\Model;
 
 use Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface;
+use Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException;
 
 class JsonRpcResponse
 {
@@ -30,7 +31,7 @@ class JsonRpcResponse
     public function setId(mixed $id): self
     {
         if (!is_string($id) && !is_int($id)) {
-            throw new \InvalidArgumentException('Id must be either an int or a string');
+            throw new JsonRpcArgumentException('Id must be either an int or a string');
         }
 
         $this->id = $id;

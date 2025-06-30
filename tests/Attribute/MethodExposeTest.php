@@ -2,9 +2,9 @@
 
 namespace Tourze\JsonRPC\Core\Tests\Attribute;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
+use Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException;
 
 /**
  * 测试MethodExpose属性类
@@ -29,7 +29,7 @@ class MethodExposeTest extends TestCase
      */
     public function testConstructWithNullMethodThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(JsonRpcArgumentException::class);
         $this->expectExceptionMessage('method参数不能为空');
 
         new MethodExpose(null);

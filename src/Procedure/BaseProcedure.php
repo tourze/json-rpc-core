@@ -90,7 +90,7 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
         // 校验数据
         foreach ($this->getParamsConstraint()->fields as $field => $rules) {
             try {
-                $v = $this->{$field};
+                $v = $this->getPropertyAccessor()->getValue($this, $field);
             } catch (\Throwable $e) { // @phpstan-ignore-line
                 $this->getBaseProcedureLogger()->warning('读取参数时报错', [
                     'procedure' => get_class($this),

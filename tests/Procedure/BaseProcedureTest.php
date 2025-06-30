@@ -12,7 +12,7 @@ use Tourze\JsonRPC\Core\Procedure\BaseProcedure;
 
 /**
  * 测试BaseProcedure抽象类
- * 
+ *
  * ⚠️ 重构建议：
  * BaseProcedure类过于复杂（354行），违反了单一职责原则，建议拆分为：
  * 1. ParameterValidator - 处理参数验证逻辑

@@ -10,6 +10,7 @@ use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Event\MethodExecuteFailureEvent;
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
+use Tourze\JsonRPC\Core\Exception\JsonRpcRuntimeException;
 
 /**
  * 测试MethodExecuteFailureEvent方法执行失败事件
@@ -21,12 +22,12 @@ class MethodExecuteFailureEventTest extends TestCase
         return new class implements JsonRpcMethodInterface {
             public function __invoke(JsonRpcRequest $request): mixed
             {
-                throw new \RuntimeException('Method execution failed');
+                throw new JsonRpcRuntimeException('Method execution failed');
             }
 
             public function execute(): array
             {
-                throw new \RuntimeException('Method execution failed');
+                throw new JsonRpcRuntimeException('Method execution failed');
             }
         };
     }
@@ -34,13 +35,13 @@ class MethodExecuteFailureEventTest extends TestCase
     public function testSetAndGetException(): void
     {
         $event = new MethodExecuteFailureEvent();
-        $exception = new \RuntimeException('Test exception', 500);
+        $exception = new JsonRpcRuntimeException('Test exception');
 
         $event->setException($exception);
 
         $this->assertSame($exception, $event->getException());
         $this->assertEquals('Test exception', $event->getException()->getMessage());
-        $this->assertEquals(500, $event->getException()->getCode());
+        $this->assertEquals(JsonRpcRuntimeException::CODE, $event->getException()->getCode());
     }
 
     public function testSetExceptionChaining(): void
@@ -80,7 +81,7 @@ class MethodExecuteFailureEventTest extends TestCase
         
         $startTime = CarbonImmutable::now()->subSeconds(1);
         $endTime = CarbonImmutable::now();
-        $exception = new \RuntimeException('Database connection failed');
+        $exception = new JsonRpcRuntimeException('Database connection failed');
         $method = $this->createMockMethod();
         $request = new JsonRpcRequest();
         $request->setMethod('user.delete');
@@ -114,20 +115,20 @@ class MethodExecuteFailureEventTest extends TestCase
     {
         $event = new MethodExecuteFailureEvent();
 
-        // 测试RuntimeException
-        $runtimeException = new \RuntimeException('Runtime error');
+        // 测试JsonRpcRuntimeException
+        $runtimeException = new JsonRpcRuntimeException('Runtime error');
         $event->setException($runtimeException);
-        $this->assertInstanceOf(\RuntimeException::class, $event->getException());
+        $this->assertInstanceOf(JsonRpcRuntimeException::class, $event->getException());
 
-        // 测试InvalidArgumentException
-        $invalidArgException = new \InvalidArgumentException('Invalid argument error');
-        $event->setException($invalidArgException);
-        $this->assertInstanceOf(\InvalidArgumentException::class, $event->getException());
+        // 测试JsonRpcArgumentException
+        $argumentException = new \Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException('Invalid argument error');
+        $event->setException($argumentException);
+        $this->assertInstanceOf(\Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException::class, $event->getException());
 
-        // 测试LogicException
-        $logicException = new \LogicException('Logic error');
-        $event->setException($logicException);
-        $this->assertInstanceOf(\LogicException::class, $event->getException());
+        // 测试其他JsonRPC异常
+        $apiException = new \Tourze\JsonRPC\Core\Exception\ApiException('API error');
+        $event->setException($apiException);
+        $this->assertInstanceOf(\Tourze\JsonRPC\Core\Exception\ApiException::class, $event->getException());
     }
 
     public function testExecutionDuration(): void
