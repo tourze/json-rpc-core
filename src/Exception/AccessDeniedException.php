@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Exception;
 
-class AccessDeniedException extends JsonRpcException
+final class AccessDeniedException extends JsonRpcException
 {
     final public const DATA_PREVIOUS_KEY = 'previous';
 
