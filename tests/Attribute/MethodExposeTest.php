@@ -2,17 +2,20 @@
 
 namespace Tourze\JsonRPC\Core\Tests\Attribute;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
-use Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException;
 
 /**
- * 测试MethodExpose属性类
+ * 测试MethodExpose属性类.
+ *
+ * @internal
  */
-class MethodExposeTest extends TestCase
+#[CoversClass(MethodExpose::class)]
+final class MethodExposeTest extends TestCase
 {
     /**
-     * 测试正常构造函数
+     * 测试正常构造函数.
      */
     public function testConstructWithValidMethod(): void
     {
@@ -25,18 +28,7 @@ class MethodExposeTest extends TestCase
     }
 
     /**
-     * 测试空method参数应抛出异常
-     */
-    public function testConstructWithNullMethodThrowsException(): void
-    {
-        $this->expectException(JsonRpcArgumentException::class);
-        $this->expectExceptionMessage('method参数不能为空');
-
-        new MethodExpose(null);
-    }
-
-    /**
-     * 测试属性的目标和重复性
+     * 测试属性的目标和重复性.
      */
     public function testAttributeTargetAndRepeatability(): void
     {
@@ -47,9 +39,9 @@ class MethodExposeTest extends TestCase
         $attribute = $attributes[0]->newInstance();
 
         // 检查属性是否可以应用于类
-        $this->assertTrue((bool)($attribute->flags & \Attribute::TARGET_CLASS));
+        $this->assertTrue((bool) ($attribute->flags & \Attribute::TARGET_CLASS));
 
         // 检查属性是否可重复
-        $this->assertTrue((bool)($attribute->flags & \Attribute::IS_REPEATABLE));
+        $this->assertTrue((bool) ($attribute->flags & \Attribute::IS_REPEATABLE));
     }
 }

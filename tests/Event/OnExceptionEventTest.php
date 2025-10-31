@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Event;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Tourze\JsonRPC\Core\Event\JsonRpcServerEvent;
 use Tourze\JsonRPC\Core\Event\OnExceptionEvent;
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
 /**
- * 测试OnExceptionEvent异常事件
+ * 测试OnExceptionEvent异常事件.
+ *
+ * @internal
  */
-class OnExceptionEventTest extends TestCase
+#[CoversClass(OnExceptionEvent::class)]
+final class OnExceptionEventTest extends TestCase
 {
     public function testSetAndGetException(): void
     {
@@ -31,9 +36,8 @@ class OnExceptionEventTest extends TestCase
         $event = new OnExceptionEvent();
         $exception = new \InvalidArgumentException('Invalid argument');
 
-        $returnedEvent = $event->setException($exception);
+        $event->setException($exception);
 
-        $this->assertSame($event, $returnedEvent);
         $this->assertSame($exception, $event->getException());
     }
 
@@ -71,7 +75,7 @@ class OnExceptionEventTest extends TestCase
     public function testCompleteExceptionEvent(): void
     {
         $event = new OnExceptionEvent();
-        
+
         $exception = new \RuntimeException('Database connection failed', 1001);
         $request = new JsonRpcRequest();
         $request->setMethod('data.fetch');
@@ -84,16 +88,22 @@ class OnExceptionEventTest extends TestCase
         // 验证所有属性
         $this->assertEquals('Database connection failed', $event->getException()->getMessage());
         $this->assertEquals(1001, $event->getException()->getCode());
-        $this->assertEquals('data.fetch', $event->getFromJsonRpcRequest()->getMethod());
-        $this->assertEquals('error-456', $event->getFromJsonRpcRequest()->getId());
-        $this->assertEquals(['table' => 'users'], $event->getFromJsonRpcRequest()->getParams()->all());
+
+        $request = $event->getFromJsonRpcRequest();
+        $this->assertNotNull($request);
+        $this->assertEquals('data.fetch', $request->getMethod());
+        $this->assertEquals('error-456', $request->getId());
+
+        $params = $request->getParams();
+        $this->assertNotNull($params);
+        $this->assertEquals(['table' => 'users'], $params->all());
     }
 
     public function testEventImplementsJsonRpcServerEvent(): void
     {
         $event = new OnExceptionEvent();
 
-        $this->assertInstanceOf(\Tourze\JsonRPC\Core\Event\JsonRpcServerEvent::class, $event);
+        $this->assertInstanceOf(JsonRpcServerEvent::class, $event);
     }
 
     public function testDifferentExceptionTypes(): void
@@ -136,7 +146,7 @@ class OnExceptionEventTest extends TestCase
     public function testEventWithNotificationRequest(): void
     {
         $event = new OnExceptionEvent();
-        
+
         $exception = new \RuntimeException('Notification processing failed');
         $request = new JsonRpcRequest();
         $request->setMethod('log.error');
@@ -146,8 +156,10 @@ class OnExceptionEventTest extends TestCase
         $event->setException($exception);
         $event->setFromJsonRpcRequest($request);
 
-        $this->assertTrue($event->getFromJsonRpcRequest()->isNotification());
-        $this->assertEquals('log.error', $event->getFromJsonRpcRequest()->getMethod());
+        $request = $event->getFromJsonRpcRequest();
+        $this->assertNotNull($request);
+        $this->assertTrue($request->isNotification());
+        $this->assertEquals('log.error', $request->getMethod());
         $this->assertEquals('Notification processing failed', $event->getException()->getMessage());
     }
 
@@ -155,12 +167,12 @@ class OnExceptionEventTest extends TestCase
     {
         $event = new OnExceptionEvent();
         $reflection = new \ReflectionClass($event);
-        
+
         $this->assertEquals('Tourze\JsonRPC\Core\Event', $reflection->getNamespaceName());
         $this->assertEquals('OnExceptionEvent', $reflection->getShortName());
         $this->assertFalse($reflection->isAbstract());
         $this->assertTrue($reflection->isInstantiable());
-        
+
         // 验证有正确的属性
         $this->assertTrue($reflection->hasProperty('exception'));
         $this->assertTrue($reflection->hasProperty('fromJsonRpcRequest'));
@@ -169,12 +181,12 @@ class OnExceptionEventTest extends TestCase
     public function testExceptionWithPreviousException(): void
     {
         $event = new OnExceptionEvent();
-        
+
         $previousException = new \InvalidArgumentException('Invalid parameter');
         $mainException = new \RuntimeException('Processing failed', 0, $previousException);
-        
+
         $event->setException($mainException);
-        
+
         $this->assertEquals('Processing failed', $event->getException()->getMessage());
         $this->assertSame($previousException, $event->getException()->getPrevious());
         $this->assertEquals('Invalid parameter', $event->getException()->getPrevious()->getMessage());
@@ -184,8 +196,8 @@ class OnExceptionEventTest extends TestCase
     {
         $reflection = new \ReflectionClass(OnExceptionEvent::class);
         $docComment = $reflection->getDocComment();
-        
+
         $this->assertNotFalse($docComment);
-        $this->assertStringContainsString('Dispatched when an exception occurred during sdk execution', $docComment);
+        $this->assertStringContainsString('在 SDK 执行期间发生异常时分发', $docComment);
     }
-} 
+}

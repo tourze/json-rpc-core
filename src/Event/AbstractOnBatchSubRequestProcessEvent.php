@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Event;
 
 /**
- * Class AbstractOnBatchSubRequestProcessEvent
+ * 批次子请求处理事件抽象类.
  */
-class AbstractOnBatchSubRequestProcessEvent implements JsonRpcServerEvent
+abstract class AbstractOnBatchSubRequestProcessEvent implements JsonRpcServerEvent
 {
     private int $itemPosition;
 

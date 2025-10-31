@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Exception;
 
 class AccessDeniedException extends JsonRpcException
@@ -15,7 +17,7 @@ class AccessDeniedException extends JsonRpcException
         parent::__construct(
             self::ERROR_CODE,
             self::ERROR_MESSAGE,
-            $previousException !== null ? [self::DATA_PREVIOUS_KEY => $previousException->getMessage()] : []
+            null !== $previousException ? [self::DATA_PREVIOUS_KEY => $previousException->getMessage()] : []
         );
     }
 }

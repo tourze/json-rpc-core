@@ -6,16 +6,22 @@ namespace Tourze\JsonRPC\Core\Tests\Event;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
+use Tourze\JsonRPC\Core\Event\AbstractOnMethodEvent;
+use Tourze\JsonRPC\Core\Event\JsonRpcServerEvent;
 use Tourze\JsonRPC\Core\Event\MethodExecuteSuccessEvent;
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
 /**
- * 测试MethodExecuteSuccessEvent方法执行成功事件
+ * 测试MethodExecuteSuccessEvent方法执行成功事件.
+ *
+ * @internal
  */
-class MethodExecuteSuccessEventTest extends TestCase
+#[CoversClass(MethodExecuteSuccessEvent::class)]
+final class MethodExecuteSuccessEventTest extends TestCase
 {
     private function createMockMethod(): JsonRpcMethodInterface
     {
@@ -86,7 +92,7 @@ class MethodExecuteSuccessEventTest extends TestCase
     public function testCompleteSuccessEvent(): void
     {
         $event = new MethodExecuteSuccessEvent();
-        
+
         $startTime = CarbonImmutable::now()->subSeconds(2);
         $endTime = CarbonImmutable::now();
         $result = ['executed' => true, 'data' => ['id' => 456]];
@@ -114,8 +120,8 @@ class MethodExecuteSuccessEventTest extends TestCase
     {
         $event = new MethodExecuteSuccessEvent();
 
-        $this->assertInstanceOf(\Tourze\JsonRPC\Core\Event\AbstractOnMethodEvent::class, $event);
-        $this->assertInstanceOf(\Tourze\JsonRPC\Core\Event\JsonRpcServerEvent::class, $event);
+        $this->assertInstanceOf(AbstractOnMethodEvent::class, $event);
+        $this->assertInstanceOf(JsonRpcServerEvent::class, $event);
     }
 
     public function testSetResultChaining(): void
@@ -123,9 +129,8 @@ class MethodExecuteSuccessEventTest extends TestCase
         $event = new MethodExecuteSuccessEvent();
         $result = ['chained' => true];
 
-        $returnedEvent = $event->setResult($result);
+        $event->setResult($result);
 
-        $this->assertSame($event, $returnedEvent);
         $this->assertEquals($result, $event->getResult());
     }
 
@@ -153,7 +158,7 @@ class MethodExecuteSuccessEventTest extends TestCase
     public function testTimeCalculation(): void
     {
         $event = new MethodExecuteSuccessEvent();
-        
+
         $startTime = CarbonImmutable::parse('2023-01-01 10:00:00');
         $endTime = CarbonImmutable::parse('2023-01-01 10:00:05');
 
@@ -164,4 +169,4 @@ class MethodExecuteSuccessEventTest extends TestCase
         $duration = $event->getStartTime()->diffInSeconds($event->getEndTime());
         $this->assertEquals(5, $duration);
     }
-} 
+}

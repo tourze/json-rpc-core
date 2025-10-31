@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Event;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Event\AbstractOnBatchSubRequestProcessEvent;
+use Tourze\JsonRPC\Core\Event\JsonRpcServerEvent;
 
 /**
- * 测试AbstractOnBatchSubRequestProcessEvent抽象事件类
+ * 测试AbstractOnBatchSubRequestProcessEvent抽象事件类.
+ *
+ * @internal
  */
-class AbstractOnBatchSubRequestProcessEventTest extends TestCase
+#[CoversClass(AbstractOnBatchSubRequestProcessEvent::class)]
+final class AbstractOnBatchSubRequestProcessEventTest extends TestCase
 {
     private function createConcreteEvent(): AbstractOnBatchSubRequestProcessEvent
     {
@@ -53,7 +58,7 @@ class AbstractOnBatchSubRequestProcessEventTest extends TestCase
     {
         $event = $this->createConcreteEvent();
 
-        $this->assertInstanceOf(\Tourze\JsonRPC\Core\Event\JsonRpcServerEvent::class, $event);
+        $this->assertInstanceOf(JsonRpcServerEvent::class, $event);
     }
 
     public function testMultiplePositionUpdates(): void
@@ -69,4 +74,4 @@ class AbstractOnBatchSubRequestProcessEventTest extends TestCase
         $event->setItemPosition(0);
         $this->assertEquals(0, $event->getItemPosition());
     }
-} 
+}

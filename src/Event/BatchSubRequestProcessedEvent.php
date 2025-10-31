@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Event;
 
 /**
- * Class OnBatchSubRequestProcessedEvent
+ * 批次子请求已处理事件.
  *
- * Dispatched only in case JSON-RPC call is a batch request, after that a sub request has been processed
+ * 仅在 JSON-RPC 调用是批次请求时分发，在子请求已处理后触发
  */
 class BatchSubRequestProcessedEvent extends AbstractOnBatchSubRequestProcessEvent
 {

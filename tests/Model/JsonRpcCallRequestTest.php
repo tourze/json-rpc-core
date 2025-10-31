@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Model;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Model\JsonRpcCallRequest;
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
-class JsonRpcCallRequestTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(JsonRpcCallRequest::class)]
+final class JsonRpcCallRequestTest extends TestCase
 {
     public function testNonBatchRequest(): void
     {

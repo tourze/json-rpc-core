@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Event;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\EventDispatcher\Event;
 
-class RequestStartEvent extends Event
+abstract class RequestStartEvent extends Event
 {
     /**
      * @var string 接收的JsonRPC字符串

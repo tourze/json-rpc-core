@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Exception;
 
 /**
- * Interface JsonRpcExceptionInterface
+ * JsonRpc 异常接口。
  */
 interface JsonRpcExceptionInterface
 {
@@ -18,7 +20,7 @@ interface JsonRpcExceptionInterface
     public function getErrorMessage(): string;
 
     /**
-     * @return array Optional error data
+     * @return array<string, mixed> Optional error data
      */
     public function getErrorData(): array;
 }

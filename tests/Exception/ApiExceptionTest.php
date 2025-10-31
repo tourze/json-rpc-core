@@ -4,18 +4,22 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Exception;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\BacktraceHelper\ContextAwareInterface;
 use Tourze\JsonRPC\Core\Exception\ApiException;
 use Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface;
+use Tourze\PHPUnitBase\AbstractExceptionTestCase;
 
 /**
- * 测试ApiException异常类
+ * 测试ApiException异常类.
+ *
+ * @internal
  */
-class ApiExceptionTest extends TestCase
+#[CoversClass(ApiException::class)]
+final class ApiExceptionTest extends AbstractExceptionTestCase
 {
     /**
-     * 测试使用字符串消息创建异常
+     * 测试使用字符串消息创建异常.
      */
     public function testCreateWithStringMessage(): void
     {
@@ -33,7 +37,7 @@ class ApiExceptionTest extends TestCase
     }
 
     /**
-     * 测试使用数组形式的消息和代码创建异常
+     * 测试使用数组形式的消息和代码创建异常.
      */
     public function testCreateWithArrayMessageAndCode(): void
     {
@@ -49,7 +53,7 @@ class ApiExceptionTest extends TestCase
     }
 
     /**
-     * 测试带有前置异常的创建
+     * 测试带有前置异常的创建.
      */
     public function testCreateWithPreviousException(): void
     {
@@ -60,7 +64,7 @@ class ApiExceptionTest extends TestCase
     }
 
     /**
-     * 测试ContextAwareInterface接口实现
+     * 测试ContextAwareInterface接口实现.
      */
     public function testContextAwareInterface(): void
     {

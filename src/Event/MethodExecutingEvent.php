@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Event;
 
 use Symfony\Contracts\EventDispatcher\Event;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 use Tourze\JsonRPC\Core\Model\JsonRpcResponse;
 
-class MethodExecutingEvent extends Event
+abstract class MethodExecutingEvent extends Event
 {
     private JsonRpcRequest $item;
 

@@ -1,17 +1,18 @@
 <?php
 
-namespace Tourze\JsonRPC\Core\Domain;
+declare(strict_types=1);
 
+namespace Tourze\JsonRPC\Core\Domain;
 
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
 /**
- * Interface JsonRpcMethodParamsValidatorInterface
+ * Interface JsonRpcMethodParamsValidatorInterface.
  */
 interface JsonRpcMethodParamsValidatorInterface
 {
     /**
-     * @return array An array of violations
+     * @return array<int, string> An array of violations
      */
     public function validate(JsonRpcRequest $jsonRpcRequest, JsonRpcMethodInterface $method): array;
 }

@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Model;
 
 use Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException;
 
-class JsonRpcRequest
+class JsonRpcRequest implements \Stringable
 {
     /**
      * @var string JSONRPC协议版本
@@ -26,18 +28,16 @@ class JsonRpcRequest
      */
     private int|string|null $id = null;
 
-    public function setId(mixed $id): self
+    public function setId(mixed $id): void
     {
         if (!is_string($id) && !is_int($id)) {
             throw new JsonRpcArgumentException('Id must be either an int or a string');
         }
 
         $this->id = $id;
-
-        return $this;
     }
 
-    public function getId(): ?string
+    public function getId(): int|string|null
     {
         return $this->id;
     }
@@ -63,19 +63,35 @@ class JsonRpcRequest
     }
 
     /**
-     * @var JsonRpcParams 调用方法所需要的结构化参数值
+     * @var JsonRpcParams|null 调用方法所需要的结构化参数值
      */
-    private JsonRpcParams $params;
+    private ?JsonRpcParams $params = null;
 
-    public function setParams(JsonRpcParams $params): self
+    public function setParams(?JsonRpcParams $params): void
     {
         $this->params = $params;
-
-        return $this;
     }
 
-    public function getParams(): JsonRpcParams
+    public function getParams(): ?JsonRpcParams
     {
         return $this->params;
+    }
+
+    public function __toString(): string
+    {
+        $payload = [
+            'jsonrpc' => $this->getJsonrpc(),
+            'method' => $this->getMethod(),
+        ];
+        if (null !== $this->getId()) {
+            $payload['id'] = $this->getId();
+        }
+        if (null !== $this->getParams() && $this->getParams()->count() > 0) {
+            $payload['params'] = $this->getParams()->toArray();
+        }
+
+        $result = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        return false !== $result ? $result : '';
     }
 }

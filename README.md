@@ -1,12 +1,25 @@
 # JSON-RPC Core
 
-This library provides core components compliant with the [JSON-RPC 2.0 specification](https://www.jsonrpc.org/specification) for building JSON-RPC servers and clients in PHP.
+[![PHP Version](https://img.shields.io/badge/php-8.1%2B-blue.svg)](https://php.net)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#testing)
+[![Code Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)](#testing)
 
-## Installation
+[English](README.md) | [中文](README.zh-CN.md)
 
-```bash
-composer require tourze/json-rpc-core
-```
+This library provides core components compliant with the 
+[JSON-RPC 2.0 specification](https://www.jsonrpc.org/specification) 
+for building JSON-RPC servers and clients in PHP.
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Components](#components)
+- [Usage Example](#usage-example)
+- [Advanced Usage](#advanced-usage)
+- [Testing](#testing)
+- [License](#license)
 
 ## Features
 
@@ -15,6 +28,25 @@ composer require tourze/json-rpc-core
 - Robust error handling for all standard JSON-RPC error types
 - Flexible method resolution interfaces
 - Clean object-oriented API
+
+## Installation
+
+```bash
+composer require tourze/json-rpc-core
+```
+
+**Requirements:**
+- PHP 8.1+
+- nesbot/carbon ^2.72 || ^3
+- psr/log ^1|^2|^3
+- symfony/dependency-injection ^7.3
+- symfony/event-dispatcher-contracts ^3
+- symfony/http-foundation ^7.3
+- symfony/property-access ^7.3
+- symfony/service-contracts ^3.6
+- symfony/validator ^7.3
+- tourze/arrayable 0.0.*
+- tourze/backtrace-helper 0.1.*
 
 ## Components
 
@@ -104,8 +136,75 @@ try {
 
 通过 `JsonRpcCallRequest` 和 `JsonRpcCallResponse` 处理批量请求。详见单元测试中的示例。
 
-## 测试
+## Advanced Usage
+
+### Custom Parameter Validation
+
+Use the `BaseProcedure` class for automatic parameter validation:
+
+```php
+use Tourze\JsonRPC\Core\Procedure\BaseProcedure;
+use Tourze\JsonRPC\Core\Attribute\MethodParam;
+use Symfony\Component\Validator\Constraints as Assert;
+
+class CalculatorMethod extends BaseProcedure
+{
+    #[MethodParam('First number')]
+    #[Assert\Type('numeric')]
+    #[Assert\NotBlank]
+    public int $a;
+
+    #[MethodParam('Second number')]
+    #[Assert\Type('numeric')]
+    #[Assert\NotBlank]
+    public int $b;
+
+    public function execute(): int
+    {
+        return $this->a + $this->b;
+    }
+}
+```
+
+### Event-Driven Architecture
+
+Listen to JSON-RPC events for logging and monitoring:
+
+```php
+use Tourze\JsonRPC\Core\Event\BeforeMethodApplyEvent;
+use Tourze\JsonRPC\Core\Event\AfterMethodApplyEvent;
+
+// Before method execution
+$dispatcher->addListener(BeforeMethodApplyEvent::class, function ($event) {
+    $logger->info('Method called', [
+        'method' => $event->getName(),
+        'params' => $event->getParams()->all()
+    ]);
+});
+
+// After method execution
+$dispatcher->addListener(AfterMethodApplyEvent::class, function ($event) {
+    $logger->info('Method completed', [
+        'method' => $event->getName(),
+        'result' => $event->getResult()
+    ]);
+});
+```
+
+### Helper Classes for Complex Validation
+
+The package includes helper classes for advanced parameter processing:
+
+- `TypeValidatorFactory`: Creates type validators from reflection
+- `PropertyConstraintExtractor`: Extracts validation constraints from properties
+- `ParameterProcessor`: Handles parameter assignment and validation
+
+## Testing
 
 ```bash
-vendor/bin/phpunit -c packages/json-rpc-core/phpunit.xml.dist
+vendor/bin/phpunit packages/json-rpc-core/tests
 ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

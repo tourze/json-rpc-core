@@ -1,34 +1,41 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Procedure;
 
 use Psr\Log\LoggerInterface;
-use Symfony\Component\PropertyAccess\Exception\InvalidArgumentException;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Symfony\Component\Validator\Constraint;
-use Symfony\Component\Validator\Constraints\AtLeastOneOf;
 use Symfony\Component\Validator\Constraints\Collection;
 use Symfony\Component\Validator\Constraints\Range;
-use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\Service\Attribute\SubscribedService;
 use Symfony\Contracts\Service\ServiceMethodsSubscriberTrait;
 use Symfony\Contracts\Service\ServiceSubscriberInterface;
+use Tourze\JsonRPC\Core\Attribute\MethodDoc;
+use Tourze\JsonRPC\Core\Attribute\MethodExpose;
 use Tourze\JsonRPC\Core\Attribute\MethodParam;
+use Tourze\JsonRPC\Core\Attribute\MethodTag;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Domain\MethodWithResultDocInterface;
 use Tourze\JsonRPC\Core\Domain\MethodWithValidatedParamsInterface;
 use Tourze\JsonRPC\Core\Event\AfterMethodApplyEvent;
 use Tourze\JsonRPC\Core\Event\BeforeMethodApplyEvent;
-use Tourze\JsonRPC\Core\Exception\ApiException;
+use Tourze\JsonRPC\Core\Helper\ParameterProcessor;
+use Tourze\JsonRPC\Core\Helper\PropertyConstraintExtractor;
+use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
 /**
  * JsonRpcMethodInterface实现起来太别扭了
- * 远不如原来我们设计的用法
+ * 远不如原来我们设计的用法.
  */
+#[MethodTag(name: 'base')]
+#[MethodDoc(summary: 'Base Procedure', description: 'Abstract base class for JSON-RPC procedures')]
+#[MethodExpose(method: 'base.procedure')]
 abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValidatedParamsInterface, MethodWithResultDocInterface, ServiceSubscriberInterface
 {
     use ServiceMethodsSubscriberTrait;
@@ -36,7 +43,10 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
     #[SubscribedService]
     private function getBaseProcedureLogger(): LoggerInterface
     {
-        return $this->container->get(__METHOD__);
+        /** @var LoggerInterface $logger */
+        $logger = $this->container->get(__METHOD__);
+
+        return $logger;
     }
 
     private static ?PropertyAccessor $propertyAccessor = null;
@@ -49,72 +59,44 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
     #[SubscribedService]
     private function getEventDispatcher(): EventDispatcherInterface
     {
-        return $this->container->get(__METHOD__);
+        /** @var EventDispatcherInterface $dispatcher */
+        $dispatcher = $this->container->get(__METHOD__);
+
+        return $dispatcher;
     }
 
     #[SubscribedService]
     private function getValidator(): ValidatorInterface
     {
-        return $this->container->get(__METHOD__);
+        /** @var ValidatorInterface $validator */
+        $validator = $this->container->get(__METHOD__);
+
+        return $validator;
+    }
+
+    private function getParameterProcessor(): ParameterProcessor
+    {
+        return new ParameterProcessor(
+            $this->getPropertyAccessor(),
+            $this->getValidator(),
+            $this->getBaseProcedureLogger()
+        );
     }
 
     /**
-     * @var array|null 原始属性列表
+     * @var array<string, mixed>|null 原始属性列表
      */
     public ?array $paramList = null;
 
     /**
-     * 设置和计算参数
+     * 设置和计算参数.
      *
-     * @throws ApiException
-     * @throws \Throwable
+     * @param array<string, mixed>|null $paramList
      */
     public function assignParams(?array $paramList = null): void
     {
-        $this->paramList = null;
-        if ($paramList !== null && $paramList !== []) {
-            foreach ($paramList as $k => $v) {
-                // TODO 在这里判断一下，成员是不是一个Entity，如果是的话，尝试读取并写入
-                if ($this->getPropertyAccessor()->isWritable($this, $k)) {
-                    try {
-                        $this->getPropertyAccessor()->setValue($this, $k, $v);
-                    } catch (InvalidArgumentException $e) {
-                        throw new ApiException("参数{$k}不合法", 0, previous: $e);
-                    }
-                }
-            }
-
-            $this->paramList = $paramList;
-        }
-
-        // 校验数据
-        foreach ($this->getParamsConstraint()->fields as $field => $rules) {
-            try {
-                $v = $this->getPropertyAccessor()->getValue($this, $field);
-            } catch (\Throwable $e) { // @phpstan-ignore-line
-                $this->getBaseProcedureLogger()->warning('读取参数时报错', [
-                    'procedure' => get_class($this),
-                    'field' => $field,
-                    'exception' => $e,
-                ]);
-                if (str_contains($e->getMessage(), 'must not be accessed before initialization')) {
-                    throw new ApiException("参数{$field}不能为空");
-                }
-
-                throw $e;
-            }
-
-            foreach ($rules as $rule) {
-                if (!($rule instanceof Constraint)) {
-                    continue;
-                }
-                $errors = $this->getValidator()->validate($v, $rule);
-                if (count($errors) > 0) {
-                    $error = $errors->get(0);
-                    throw new ApiException("参数{$field}校验不通过：" . $error->getMessage());
-                }
-            }
-        }
+        $this->paramList = $paramList;
+        $this->getParameterProcessor()->assignParameters($this, $paramList);
     }
 
     public function __invoke(JsonRpcRequest $request): mixed
@@ -124,10 +106,10 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
         $beforeEvent->setMethod($this);
         $beforeEvent->setRequest($request);
         $beforeEvent->setName($request->getMethod());
-        $beforeEvent->setParams($request->getParams());
+        $beforeEvent->setParams($request->getParams() ?? new JsonRpcParams());
         $this->getEventDispatcher()->dispatch($beforeEvent);
         if (null !== $beforeEvent->getResult()) {
-            $this->getBaseProcedureLogger()->debug('执行前直接返回结果', $beforeEvent->getResult());
+            $this->getBaseProcedureLogger()->debug('执行前直接返回结果', ['result' => $beforeEvent->getResult()]);
 
             return $beforeEvent->getResult();
         }
@@ -148,177 +130,43 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
     }
 
     /**
-     * 根据变量类型生成规则
-     */
-    protected static function genTypeValidatorByReflectionType(\ReflectionType $type): Type|AtLeastOneOf|null
-    {
-        // 联合类型，如果满足一个就给过
-        if ($type instanceof \ReflectionUnionType) {
-            $AtLeastOneOf = [];
-            foreach ($type->getTypes() as $subType) {
-                $tmp = static::genTypeValidatorByReflectionType($subType);
-                if ($tmp !== null) {
-                    $AtLeastOneOf[] = $tmp;
-                }
-            }
-
-            return new AtLeastOneOf($AtLeastOneOf);
-        }
-
-        // 只有内建类型，我们才支持输入
-        if ($type instanceof \ReflectionNamedType) {
-            if (!$type->isBuiltin()) {
-                return null;
-            }
-            return static::genTypeValidatorByTypeName($type->getName());
-        }
-
-        return null;
-    }
-
-    protected static function genTypeValidatorByTypeName(string $typeName): Type|null
-    {
-        if ('null' === $typeName) {
-            return new Type('null');
-        }
-
-        if ('string' === $typeName) {
-            return new Type('string');
-        }
-
-        if ('bool' === $typeName || 'boolean' === $typeName) {
-            return new Type('bool');
-        }
-
-        if ('float' === $typeName || 'double' === $typeName) {
-            return new Type('float');
-        }
-
-        // 因为前端传入的参数，int也可能传入字符串的，所以下面这个校验不太好处理，只能暂时注释了
-        if ('int' === $typeName || 'integer' === $typeName) {
-            return new Type('integer');
-        }
-
-        if ('array' === $typeName) {
-            return new Type('array');
-        }
-
-        // TODO 对应类似 public ?int $page 这种入参，我们要怎么处理？
-        return null;
-    }
-
-    /**
-     * 因为目前前端入参还不够严谨，所以实际上会存在以下情况：
-     * 1. 期望传入 1，实际传入的是 '1'；
-     * 2. 期望传入 '1.0'，实际传入的是 1.0；
-     * 但是我们又不能要求前端马上全部改完，所以只能在这里我们兼容一次
-     */
-    protected static function makeTypeCompatible(Type|AtLeastOneOf $type): AtLeastOneOf|Type
-    {
-        if ($type instanceof Type) {
-            if (in_array($type->type, ['int', 'integer', 'string', 'float', 'double'])) {
-                return new AtLeastOneOf([
-                    new Type('integer'),
-                    new Type('string'),
-                    new Type('float'),
-                ]);
-            }
-
-            if (in_array($type->type, ['boolean', 'bool'])) {
-                return new AtLeastOneOf([
-                    new Type('string'),
-                    new Type('integer'),
-                    new Type('bool'),
-                ]);
-            }
-        }
-
-        return $type;
-    }
-
-    /**
-     * 根据当前属性的定义，自动生成规则
+     * 根据当前属性的定义，自动生成规则.
      */
     public function getParamsConstraint(): Collection
     {
-        // 根据属性中的定义，自动生成
         $fields = [];
-        foreach ((new \ReflectionClass($this))->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
-            // 过滤特殊的参数
-            if (in_array($property->getName(), ['paramList', '_class'])) {
+        $reflection = new \ReflectionClass($this);
+
+        foreach ($reflection->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
+            if (in_array($property->getName(), ['paramList', '_class'], true)) {
                 continue;
             }
 
-            $tmp = $this->getPropertyConstraint($property);
-            if ($tmp !== null) {
-                $fields[$property->getName()] = $tmp;
+            $constraint = PropertyConstraintExtractor::extractConstraint($property);
+            if (null !== $constraint) {
+                $fields[$property->getName()] = $constraint;
             }
         }
 
         return new Collection($fields, allowExtraFields: true, allowMissingFields: true);
     }
 
-    protected function getPropertyConstraint(\ReflectionProperty $property): Constraint|Collection|array|null
-    {
-        // 如果是枚举类型，那我们取枚举的实际类型
-        $type = $property->getType();
-        if ($type instanceof \ReflectionNamedType) {
-            $name = $type->getName();
-            if (class_exists($name) && is_subclass_of($name, \BackedEnum::class)) {
-                $reflectionEnum = new \ReflectionEnum($name);
-                return static::genTypeValidatorByTypeName($reflectionEnum->getBackingType()->getName());
-            }
-        }
-
-        $all = [];
-
-        // 基础类型，基础处理啦
-        if ($property->getType() !== null) {
-            $tmp = static::genTypeValidatorByReflectionType($property->getType());
-            if ($tmp !== null) {
-                $all[] = static::makeTypeCompatible($tmp);
-            }
-        }
-
-        // 如果在成员那里有定义Asset规则，那就直接加入
-        $reflectionType = $property->getType();
-        if ($reflectionType instanceof \ReflectionNamedType && $reflectionType->isBuiltin()) {
-            foreach ($property->getAttributes() as $attribute) {
-                if (is_subclass_of($attribute->getName(), Constraint::class)) {
-                    $all[] = $attribute->newInstance();
-                }
-            }
-        }
-
-        if (!empty($all)) {
-            if (1 === count($all)) {
-                return array_shift($all);
-            } else {
-                // TODO 多个规则的话，会有问题，报一个类型不匹配的校验错误，暂时没办法解决，先跳过，只使用基础类型
-                // $fields[$property->getName()] = new All($all);
-                $tmp = static::genTypeValidatorByReflectionType($property->getType());
-                if ($tmp !== null) {
-                    return static::makeTypeCompatible($tmp);
-                }
-            }
-        }
-        return null;
-    }
-
     /**
-     * 获取指定参数的文档描述
+     * 获取指定参数的文档描述.
+     *
+     * @return array<string, mixed>|null
      */
     public function getPropertyDocument(string $propertyName): ?array
     {
-        $property = (new \ReflectionClass(static::class))->getProperty($propertyName);
+        $property = (new \ReflectionClass($this))->getProperty($propertyName);
 
         $MethodParam = $property->getAttributes(MethodParam::class);
-        if (empty($MethodParam)) {
+        if ([] === $MethodParam) {
             return null;
         }
 
-        /** @var MethodParam $MethodParam */
         $MethodParam = $MethodParam[0]->newInstance();
+        assert($MethodParam instanceof MethodParam);
 
         $reflectionType = $property->getType();
         $type = ($reflectionType instanceof \ReflectionNamedType)
@@ -332,8 +180,8 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
             }
 
             if (Range::class === $attribute->getName()) {
-                /** @var Range $instance */
                 $instance = $attribute->newInstance();
+                assert($instance instanceof Range);
                 $min = $instance->min;
                 $max = $instance->max;
             }
@@ -351,7 +199,9 @@ abstract class BaseProcedure implements JsonRpcMethodInterface, MethodWithValida
     }
 
     /**
-     * 返回Mock数据
+     * 返回Mock数据.
+     *
+     * @return array<string, mixed>|null
      */
     public static function getMockResult(): ?array
     {

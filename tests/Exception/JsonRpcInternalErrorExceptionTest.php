@@ -2,15 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Tourze\JsonRPC\Core\Tests\Unit\Exception;
+namespace Tourze\JsonRPC\Core\Tests\Exception;
 
-use PHPUnit\Framework\TestCase;
-use RuntimeException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\JsonRPC\Core\Exception\JsonRpcException;
 use Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface;
 use Tourze\JsonRPC\Core\Exception\JsonRpcInternalErrorException;
+use Tourze\PHPUnitBase\AbstractExceptionTestCase;
 
-class JsonRpcInternalErrorExceptionTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(JsonRpcInternalErrorException::class)]
+final class JsonRpcInternalErrorExceptionTest extends AbstractExceptionTestCase
 {
     public function testExceptionCreationWithoutPrevious(): void
     {
@@ -25,12 +29,12 @@ class JsonRpcInternalErrorExceptionTest extends TestCase
 
     public function testExceptionCreationWithPrevious(): void
     {
-        $previousException = new RuntimeException('Previous error message');
+        $previousException = new \RuntimeException('Previous error message');
         $exception = new JsonRpcInternalErrorException($previousException);
 
         $this->assertEquals(JsonRpcInternalErrorException::CODE, $exception->getCode());
         $this->assertArrayHasKey(JsonRpcInternalErrorException::DATA_PREVIOUS_KEY, $exception->getErrorData());
-        
+
         $errorData = $exception->getErrorData();
         $this->assertIsString($errorData[JsonRpcInternalErrorException::DATA_PREVIOUS_KEY]);
         $this->assertStringContainsString('Previous error message', $errorData[JsonRpcInternalErrorException::DATA_PREVIOUS_KEY]);

@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Event;
 
 use Carbon\CarbonInterface;
 
 /**
- * Class OnMethodSuccessEvent
+ * Class OnMethodSuccessEvent.
  *
  * Dispatched only in case JSON-RPC method has been successfully executed.
  */
@@ -18,11 +20,9 @@ class MethodExecuteSuccessEvent extends AbstractOnMethodEvent
         return $this->result;
     }
 
-    public function setResult(mixed $result): self
+    public function setResult(mixed $result): void
     {
         $this->result = $result;
-
-        return $this;
     }
 
     private CarbonInterface $startTime;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Contracts;
 
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;

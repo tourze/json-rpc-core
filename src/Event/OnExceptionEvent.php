@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Event;
 
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
 /**
- * Class OnExceptionEvent
+ * 异常事件.
  *
- * Dispatched when an exception occurred during sdk execution (For method execution exception see OnMethodFailureEvent)
+ * 在 SDK 执行期间发生异常时分发（方法执行异常请参见 OnMethodFailureEvent）
  */
 class OnExceptionEvent implements JsonRpcServerEvent
 {
@@ -18,11 +20,9 @@ class OnExceptionEvent implements JsonRpcServerEvent
         return $this->exception;
     }
 
-    public function setException(\Throwable $exception): self
+    public function setException(\Throwable $exception): void
     {
         $this->exception = $exception;
-
-        return $this;
     }
 
     private ?JsonRpcRequest $fromJsonRpcRequest = null;

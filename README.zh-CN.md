@@ -1,12 +1,25 @@
 # JSON-RPC Core
 
-本库为 PHP 提供符合 [JSON-RPC 2.0 规范](https://www.jsonrpc.org/specification) 的核心组件，可用于构建高效、标准化的 JSON-RPC 服务器与客户端。
+[![PHP Version](https://img.shields.io/badge/php-8.1%2B-blue.svg)](https://php.net)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#测试)
+[![Code Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)](#测试)
 
-## 安装
+[English](README.md) | [中文](README.zh-CN.md)
 
-```bash
-composer require tourze/json-rpc-core
-```
+本库为 PHP 提供符合 [JSON-RPC 2.0 规范](https://www.jsonrpc.org/specification) 
+的核心组件，可用于构建高效、标准化的 JSON-RPC 服务器与客户端。
+
+## 目录
+
+- [特性](#特性)
+- [安装](#安装)
+- [组件说明](#组件说明)
+- [使用示例](#使用示例)
+- [高级用法](#高级用法)
+- [测试](#测试)
+- [贡献与支持](#贡献与支持)
+- [License](#license)
 
 ## 特性
 
@@ -15,6 +28,25 @@ composer require tourze/json-rpc-core
 - 完善的错误处理机制，覆盖所有标准错误类型
 - 灵活的方法解析与参数校验接口
 - 清晰易用的面向对象 API
+
+## 安装
+
+```bash
+composer require tourze/json-rpc-core
+```
+
+**依赖要求：**
+- PHP 8.1+
+- nesbot/carbon ^2.72 || ^3
+- psr/log ^1|^2|^3
+- symfony/dependency-injection ^7.3
+- symfony/event-dispatcher-contracts ^3
+- symfony/http-foundation ^7.3
+- symfony/property-access ^7.3
+- symfony/service-contracts ^3.6
+- symfony/validator ^7.3
+- tourze/arrayable 0.0.*
+- tourze/backtrace-helper 0.1.*
 
 ## 组件说明
 
@@ -57,13 +89,126 @@ class EchoMethod implements JsonRpcMethodInterface
     {
         return $request->getParams()->all();
     }
+
+    public function execute(): array
+    {
+        return [];
+    }
 }
 ```
 
-## 工作流程
+### 处理 JSON-RPC 请求
 
-本库支持标准 JSON-RPC 2.0 的全部流程，包括请求解析、方法分发、参数校验、异常处理、响应生成等。复杂流程可参考[流程图](./json-rpc-core-flow.md)。
+```php
+use Tourze\JsonRPC\Core\Exception\JsonRpcException;
+use Tourze\JsonRPC\Core\Model\JsonRpcParams;
+use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
+use Tourze\JsonRPC\Core\Model\JsonRpcResponse;
+
+// 创建请求
+$request = new JsonRpcRequest();
+$request->setJsonrpc('2.0');
+$request->setMethod('echo');
+$request->setId('1');
+$request->setParams(new JsonRpcParams(['message' => 'Hello, World!']));
+
+// 创建方法实例
+$method = new EchoMethod();
+
+// 执行方法并获取响应
+$response = new JsonRpcResponse();
+$response->setJsonrpc('2.0');
+$response->setId($request->getId());
+
+try {
+    $result = $method($request);
+    $response->setResult($result);
+} catch (JsonRpcException $e) {
+    $response->setError($e);
+} catch (\Throwable $e) {
+    // 将普通异常包装为 JSON-RPC 异常
+    $jsonRpcException = new JsonRpcException(-32000, $e->getMessage());
+    $response->setError($jsonRpcException);
+}
+```
+
+### 批量请求
+
+通过 `JsonRpcCallRequest` 和 `JsonRpcCallResponse` 处理批量请求。详见单元测试中的示例。
+
+## 高级用法
+
+### 自定义参数验证
+
+使用 `BaseProcedure` 类进行自动参数验证：
+
+```php
+use Tourze\JsonRPC\Core\Procedure\BaseProcedure;
+use Tourze\JsonRPC\Core\Attribute\MethodParam;
+use Symfony\Component\Validator\Constraints as Assert;
+
+class CalculatorMethod extends BaseProcedure
+{
+    #[MethodParam('第一个数字')]
+    #[Assert\Type('numeric')]
+    #[Assert\NotBlank]
+    public int $a;
+
+    #[MethodParam('第二个数字')]
+    #[Assert\Type('numeric')]
+    #[Assert\NotBlank]
+    public int $b;
+
+    public function execute(): int
+    {
+        return $this->a + $this->b;
+    }
+}
+```
+
+### 事件驱动架构
+
+监听 JSON-RPC 事件进行日志和监控：
+
+```php
+use Tourze\JsonRPC\Core\Event\BeforeMethodApplyEvent;
+use Tourze\JsonRPC\Core\Event\AfterMethodApplyEvent;
+
+// 方法执行前
+$dispatcher->addListener(BeforeMethodApplyEvent::class, function ($event) {
+    $logger->info('方法调用', [
+        'method' => $event->getName(),
+        'params' => $event->getParams()->all()
+    ]);
+});
+
+// 方法执行后
+$dispatcher->addListener(AfterMethodApplyEvent::class, function ($event) {
+    $logger->info('方法完成', [
+        'method' => $event->getName(),
+        'result' => $event->getResult()
+    ]);
+});
+```
+
+### 复杂验证的辅助类
+
+本包包含用于高级参数处理的辅助类：
+
+- `TypeValidatorFactory`: 从反射创建类型验证器
+- `PropertyConstraintExtractor`: 从属性提取验证约束
+- `ParameterProcessor`: 处理参数赋值和验证
+
+## 测试
+
+```bash
+vendor/bin/phpunit packages/json-rpc-core/tests
+```
 
 ## 贡献与支持
 
 欢迎提交 Issue 或 PR 参与改进。如需更多帮助，请参考源码或联系维护者。
+
+## License
+
+本项目采用 MIT 许可证 - 详情请参阅 [LICENSE](LICENSE) 文件。

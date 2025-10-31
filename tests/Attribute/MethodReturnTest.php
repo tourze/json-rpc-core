@@ -2,13 +2,17 @@
 
 namespace Tourze\JsonRPC\Core\Tests\Attribute;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Attribute\MethodReturn;
 
 /**
- * 测试MethodReturn属性类
+ * 测试MethodReturn属性类.
+ *
+ * @internal
  */
-class MethodReturnTest extends TestCase
+#[CoversClass(MethodReturn::class)]
+final class MethodReturnTest extends TestCase
 {
     /**
      * 测试构造函数默认值
@@ -35,7 +39,7 @@ class MethodReturnTest extends TestCase
     }
 
     /**
-     * 测试属性的目标
+     * 测试属性的目标.
      */
     public function testAttributeTarget(): void
     {
@@ -46,8 +50,8 @@ class MethodReturnTest extends TestCase
         $attribute = $attributes[0]->newInstance();
 
         // 检查属性是否只应用于方法
-        $this->assertTrue((bool)($attribute->flags & \Attribute::TARGET_METHOD));
-        $this->assertFalse((bool)($attribute->flags & \Attribute::TARGET_CLASS));
-        $this->assertFalse((bool)($attribute->flags & \Attribute::TARGET_PROPERTY));
+        $this->assertTrue((bool) ($attribute->flags & \Attribute::TARGET_METHOD));
+        $this->assertFalse((bool) ($attribute->flags & \Attribute::TARGET_CLASS));
+        $this->assertFalse((bool) ($attribute->flags & \Attribute::TARGET_PROPERTY));
     }
 }

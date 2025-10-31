@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Domain;
 
 use Symfony\Component\Validator\Constraints\Collection;
 
 /**
- * Interface MethodWithValidatedParamsInterface
+ * 带有验证参数的方法接口.
  */
 interface MethodWithValidatedParamsInterface
 {

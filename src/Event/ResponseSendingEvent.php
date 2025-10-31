@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Event;
 
 use Symfony\Component\HttpFoundation\Request;
@@ -7,9 +9,9 @@ use Tourze\JsonRPC\Core\Model\JsonRpcCallRequest;
 use Tourze\JsonRPC\Core\Model\JsonRpcCallResponse;
 
 /**
- * Class OnResponseSendingEvent
+ * 响应发送事件.
  *
- * Dispatched when a response has been successfully serialized by the endpoint and will be returned
+ * 在响应已被端点成功序列化并即将返回时分发
  */
 class ResponseSendingEvent implements JsonRpcServerEvent
 {

@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Exception;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\JsonRPC\Core\Exception\AccessDeniedException;
 use Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface;
+use Tourze\PHPUnitBase\AbstractExceptionTestCase;
 
 /**
- * 测试AccessDeniedException异常类
+ * 测试AccessDeniedException异常类.
+ *
+ * @internal
  */
-class AccessDeniedExceptionTest extends TestCase
+#[CoversClass(AccessDeniedException::class)]
+final class AccessDeniedExceptionTest extends AbstractExceptionTestCase
 {
     /**
-     * 测试异常的基本属性
+     * 测试异常的基本属性.
      */
     public function testBasicProperties(): void
     {
@@ -27,7 +31,7 @@ class AccessDeniedExceptionTest extends TestCase
     }
 
     /**
-     * 测试带有前置异常的创建
+     * 测试带有前置异常的创建.
      */
     public function testWithPreviousException(): void
     {

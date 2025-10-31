@@ -2,20 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Tourze\JsonRPC\Core\Tests\Unit\Exception;
+namespace Tourze\JsonRPC\Core\Tests\Exception;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\JsonRPC\Core\Exception\JsonRpcException;
 use Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface;
 use Tourze\JsonRPC\Core\Exception\JsonRpcInvalidRequestException;
+use Tourze\PHPUnitBase\AbstractExceptionTestCase;
 
-class JsonRpcInvalidRequestExceptionTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(JsonRpcInvalidRequestException::class)]
+final class JsonRpcInvalidRequestExceptionTest extends AbstractExceptionTestCase
 {
     public function testExceptionCreationWithContent(): void
     {
         $content = '{"invalid": "json"}';
         $description = 'Missing required field';
-        
+
         $exception = new JsonRpcInvalidRequestException($content, $description);
 
         $this->assertInstanceOf(JsonRpcExceptionInterface::class, $exception);
@@ -30,7 +35,7 @@ class JsonRpcInvalidRequestExceptionTest extends TestCase
     public function testExceptionCreationWithoutDescription(): void
     {
         $content = '{"invalid": "json"}';
-        
+
         $exception = new JsonRpcInvalidRequestException($content);
 
         $this->assertEquals(JsonRpcInvalidRequestException::CODE, $exception->getCode());
@@ -60,7 +65,7 @@ class JsonRpcInvalidRequestExceptionTest extends TestCase
     {
         $content = ['test' => 'data'];
         $description = 'Test description';
-        
+
         $exception = new JsonRpcInvalidRequestException($content, $description);
 
         $this->assertEquals($content, $exception->getContent());

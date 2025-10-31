@@ -2,14 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Tourze\JsonRPC\Core\Tests\Unit\Exception;
+namespace Tourze\JsonRPC\Core\Tests\Exception;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\JsonRPC\Core\Exception\JsonRpcException;
 use Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface;
 use Tourze\JsonRPC\Core\Exception\JsonRpcRuntimeException;
+use Tourze\PHPUnitBase\AbstractExceptionTestCase;
 
-class JsonRpcRuntimeExceptionTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(JsonRpcRuntimeException::class)]
+final class JsonRpcRuntimeExceptionTest extends AbstractExceptionTestCase
 {
     public function testExceptionCreation(): void
     {

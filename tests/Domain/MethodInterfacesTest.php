@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Domain;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Validator\Constraints\Collection;
 use Symfony\Component\Validator\Constraints\NotBlank;
@@ -16,10 +17,14 @@ use Tourze\JsonRPC\Core\Domain\MethodWithValidatedParamsInterface;
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
-class MethodInterfacesTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(JsonRpcMethodInterface::class)]
+final class MethodInterfacesTest extends TestCase
 {
     /**
-     * 测试方法参数验证器接口
+     * 测试方法参数验证器接口.
      */
     public function testMethodParamsValidatorInterface(): void
     {
@@ -53,7 +58,7 @@ class MethodInterfacesTest extends TestCase
     }
 
     /**
-     * 测试方法解析器接口
+     * 测试方法解析器接口.
      */
     public function testMethodResolverInterface(): void
     {
@@ -77,7 +82,7 @@ class MethodInterfacesTest extends TestCase
             public function resolve(string $methodName): ?JsonRpcMethodInterface
             {
                 // 返回 null 表示方法未找到，返回实例表示找到了方法
-                return $methodName === 'test.method' ? $this->testMethod : null;
+                return 'test.method' === $methodName ? $this->testMethod : null;
             }
 
             public function getAllMethodNames(): array
@@ -99,7 +104,7 @@ class MethodInterfacesTest extends TestCase
     }
 
     /**
-     * 测试带有结果文档的方法接口
+     * 测试带有结果文档的方法接口.
      */
     public function testMethodWithResultDocInterface(): void
     {
@@ -124,7 +129,7 @@ class MethodInterfacesTest extends TestCase
     }
 
     /**
-     * 测试带有参数验证的方法接口
+     * 测试带有参数验证的方法接口.
      */
     public function testMethodWithValidatedParamsInterface(): void
     {
@@ -141,20 +146,16 @@ class MethodInterfacesTest extends TestCase
 
             public function getParamsConstraint(): Collection
             {
-                return new Collection([
-                    'fields' => [
-                        'username' => [
-                            new NotBlank(),
-                            new Type('string'),
-                        ],
-                        'email' => [
-                            new NotBlank(),
-                            new Type('string'),
-                        ],
+                return new Collection(fields: [
+                    'username' => [
+                        new NotBlank(),
+                        new Type('string'),
                     ],
-                    'allowExtraFields' => false,
-                    'allowMissingFields' => false,
-                ]);
+                    'email' => [
+                        new NotBlank(),
+                        new Type('string'),
+                    ],
+                ], allowExtraFields: false, allowMissingFields: false);
             }
         };
 

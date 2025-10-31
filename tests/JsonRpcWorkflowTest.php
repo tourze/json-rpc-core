@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Tourze\JsonRPC\Core\Tests\Integration;
+namespace Tourze\JsonRPC\Core\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Exception\JsonRpcException;
+use Tourze\JsonRPC\Core\Exception\JsonRpcInternalErrorException;
+use Tourze\JsonRPC\Core\Exception\JsonRpcInvalidParamsException;
 use Tourze\JsonRPC\Core\Exception\JsonRpcMethodNotFoundException;
 use Tourze\JsonRPC\Core\Model\JsonRpcCallRequest;
 use Tourze\JsonRPC\Core\Model\JsonRpcCallResponse;
@@ -15,12 +18,13 @@ use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 use Tourze\JsonRPC\Core\Model\JsonRpcResponse;
 
 /**
- * 集成测试，测试完整的JSON-RPC工作流程
+ * @internal
  */
-class JsonRpcWorkflowTest extends TestCase
+#[CoversClass(JsonRpcCallRequest::class)]
+final class JsonRpcWorkflowTest extends TestCase
 {
     /**
-     * 模拟的JSON-RPC方法实现
+     * 模拟的JSON-RPC方法实现.
      */
     private function createEchoMethod(): JsonRpcMethodInterface
     {
@@ -28,9 +32,14 @@ class JsonRpcWorkflowTest extends TestCase
             public function __invoke(JsonRpcRequest $request): mixed
             {
                 // 简单的回声方法，返回传入的参数
-                return $request->getParams()->all();
+                $params = $request->getParams();
+
+                return null !== $params ? $params->all() : [];
             }
 
+            /**
+             * @return array<string, mixed>
+             */
             public function execute(): array
             {
                 return [];
@@ -44,27 +53,38 @@ class JsonRpcWorkflowTest extends TestCase
             public function __invoke(JsonRpcRequest $request): mixed
             {
                 $params = $request->getParams();
+                if (null === $params) {
+                    throw new JsonRpcInvalidParamsException(['message' => '缺少参数', 'code' => 1]);
+                }
                 $a = $params->get('a');
                 $b = $params->get('b');
                 $op = $params->get('op');
 
+                // 转换为数值类型以满足 PHPStan 的类型要求
+                $numA = is_numeric($a) ? (is_int($a) ? $a : (float) $a) : throw new JsonRpcInvalidParamsException(['message' => 'Parameter "a" must be numeric', 'code' => 1]);
+                $numB = is_numeric($b) ? (is_int($b) ? $b : (float) $b) : throw new JsonRpcInvalidParamsException(['message' => 'Parameter "b" must be numeric', 'code' => 1]);
+
                 switch ($op) {
                     case 'add':
-                        return $a + $b;
+                        return $numA + $numB;
                     case 'subtract':
-                        return $a - $b;
+                        return $numA - $numB;
                     case 'multiply':
-                        return $a * $b;
+                        return $numA * $numB;
                     case 'divide':
-                        if ($b == 0) {
-                            throw new JsonRpcException(1, '除数不能为零');
+                        if (0 === $numB || 0.0 === $numB) {
+                            throw new JsonRpcInvalidParamsException(['message' => '除数不能为零', 'code' => 1]);
                         }
-                        return $a / $b;
+
+                        return $numA / $numB;
                     default:
-                        throw new JsonRpcException(2, '不支持的操作');
+                        throw new JsonRpcInvalidParamsException(['message' => '不支持的操作', 'code' => 2]);
                 }
             }
 
+            /**
+             * @return array<string, mixed>
+             */
             public function execute(): array
             {
                 return [];
@@ -73,7 +93,7 @@ class JsonRpcWorkflowTest extends TestCase
     }
 
     /**
-     * 简单的方法解析器
+     * 简单的方法解析器.
      */
     private function createMethodResolver(): callable
     {
@@ -81,18 +101,18 @@ class JsonRpcWorkflowTest extends TestCase
         $calculatorMethod = $this->createCalculatorMethod();
 
         return function (string $methodName) use ($echoMethod, $calculatorMethod): JsonRpcMethodInterface {
-            if ($methodName === 'echo') {
+            if ('echo' === $methodName) {
                 return $echoMethod;
-            } else if ($methodName === 'calculator') {
-                return $calculatorMethod;
-            } else {
-                throw new JsonRpcMethodNotFoundException($methodName, ['available_methods' => ['echo', 'calculator']]);
             }
+            if ('calculator' === $methodName) {
+                return $calculatorMethod;
+            }
+            throw new JsonRpcMethodNotFoundException($methodName, ['available_methods' => ['echo', 'calculator']]);
         };
     }
 
     /**
-     * 测试单个JSON-RPC请求的处理
+     * 测试单个JSON-RPC请求的处理.
      */
     public function testSingleRequest(): void
     {
@@ -123,32 +143,25 @@ class JsonRpcWorkflowTest extends TestCase
                 try {
                     $methodName = $item->getMethod();
                     $method = $methodResolver($methodName);
-                    $result = $method($item);
+                    $this->assertInstanceOf(JsonRpcMethodInterface::class, $method);
+                    $result = call_user_func($method, $item);
                     $response->setResult($result);
                 } catch (JsonRpcException $e) {
                     $response->setError($e);
                 } catch (\Throwable $e) {
                     // 将普通异常包装为JSON-RPC异常
-                    $jsonRpcException = new JsonRpcException(
-                        -32000,
-                        $e->getMessage(),
-                        ['exception' => get_class($e)]
-                    );
+                    $jsonRpcException = new JsonRpcInternalErrorException($e);
                     $response->setError($jsonRpcException);
                 }
 
                 $callResponse->addResponse($response);
-            } else if ($item instanceof \Exception) {
+            } elseif ($item instanceof \Exception) {
                 $response = new JsonRpcResponse();
                 $response->setJsonrpc('2.0');
                 $response->setId(null);
 
                 // 将异常包装为JSON-RPC异常
-                $jsonRpcException = new JsonRpcException(
-                    -32000,
-                    $item->getMessage(),
-                    ['exception' => get_class($item)]
-                );
+                $jsonRpcException = new JsonRpcInternalErrorException($item);
                 $response->setError($jsonRpcException);
 
                 $callResponse->addResponse($response);
@@ -167,7 +180,7 @@ class JsonRpcWorkflowTest extends TestCase
     }
 
     /**
-     * 测试批量JSON-RPC请求的处理
+     * 测试批量JSON-RPC请求的处理.
      */
     public function testBatchRequest(): void
     {
@@ -222,32 +235,25 @@ class JsonRpcWorkflowTest extends TestCase
                 try {
                     $methodName = $item->getMethod();
                     $method = $methodResolver($methodName);
-                    $result = $method($item);
+                    $this->assertInstanceOf(JsonRpcMethodInterface::class, $method);
+                    $result = call_user_func($method, $item);
                     $response->setResult($result);
                 } catch (JsonRpcException $e) {
                     $response->setError($e);
                 } catch (\Throwable $e) {
                     // 将普通异常包装为JSON-RPC异常
-                    $jsonRpcException = new JsonRpcException(
-                        -32000,
-                        $e->getMessage(),
-                        ['exception' => get_class($e)]
-                    );
+                    $jsonRpcException = new JsonRpcInternalErrorException($e);
                     $response->setError($jsonRpcException);
                 }
 
                 $callResponse->addResponse($response);
-            } else if ($item instanceof \Exception) {
+            } elseif ($item instanceof \Exception) {
                 $response = new JsonRpcResponse();
                 $response->setJsonrpc('2.0');
                 $response->setId(null);
 
                 // 将异常包装为JSON-RPC异常
-                $jsonRpcException = new JsonRpcException(
-                    -32000,
-                    $item->getMessage(),
-                    ['exception' => get_class($item)]
-                );
+                $jsonRpcException = new JsonRpcInternalErrorException($item);
                 $response->setError($jsonRpcException);
 
                 $callResponse->addResponse($response);
@@ -275,8 +281,8 @@ class JsonRpcWorkflowTest extends TestCase
         $this->assertEquals('3', $response3->getId());
         $this->assertNull($response3->getResult());
         $this->assertInstanceOf(JsonRpcException::class, $response3->getError());
-        $this->assertEquals(1, $response3->getError()->getErrorCode());
-        $this->assertEquals('除数不能为零', $response3->getError()->getErrorMessage());
+        $this->assertEquals(-32602, $response3->getError()->getErrorCode());
+        $this->assertEquals('Invalid params', $response3->getError()->getErrorMessage());
 
         // 检查响应4：方法不存在
         $response4 = $responses[3];
@@ -288,13 +294,23 @@ class JsonRpcWorkflowTest extends TestCase
     }
 
     /**
-     * 测试通知请求（无ID）
+     * 测试通知请求（无ID）.
      */
     public function testNotification(): void
     {
         $methodResolver = $this->createMethodResolver();
+        $request = $this->createNotificationRequest();
+        $callRequest = $this->createCallRequest($request);
+        $callResponse = new JsonRpcCallResponse(false);
 
-        // 创建通知请求
+        $this->processRequestItems($callRequest, $callResponse, $methodResolver);
+
+        // 通知不应有响应
+        $this->assertEmpty($callResponse->getResponseList());
+    }
+
+    private function createNotificationRequest(): JsonRpcRequest
+    {
         $request = new JsonRpcRequest();
         $request->setJsonrpc('2.0');
         $request->setMethod('echo');
@@ -304,48 +320,103 @@ class JsonRpcWorkflowTest extends TestCase
         // 验证它是一个通知
         $this->assertTrue($request->isNotification());
 
-        // 创建调用请求
+        return $request;
+    }
+
+    private function createCallRequest(JsonRpcRequest $request): JsonRpcCallRequest
+    {
         $callRequest = new JsonRpcCallRequest(false);
         $callRequest->addRequestItem($request);
 
-        // 创建响应
-        $callResponse = new JsonRpcCallResponse(false);
+        return $callRequest;
+    }
 
-        // 处理请求
+    private function processRequestItems(
+        JsonRpcCallRequest $callRequest,
+        JsonRpcCallResponse $callResponse,
+        callable $methodResolver,
+    ): void {
         foreach ($callRequest->getItemList() as $item) {
             if ($item instanceof JsonRpcRequest) {
-                // 如果是通知，不需要响应
-                if ($item->isNotification()) {
-                    try {
-                        $methodName = $item->getMethod();
-                        $method = $methodResolver($methodName);
-                        $method($item); // 执行但忽略结果
-                    } catch (\Throwable $e) {
-                        // 通知不需要返回错误
-                    }
-                } else {
-                    $response = new JsonRpcResponse();
-                    $response->setJsonrpc('2.0');
-                    $response->setId($item->getId());
-
-                    try {
-                        $methodName = $item->getMethod();
-                        $method = $methodResolver($methodName);
-                        $result = $method($item);
-                        $response->setResult($result);
-                    } catch (JsonRpcException $e) {
-                        $response->setError($e);
-                    } catch (\Throwable $e) {
-                        $jsonRpcException = new JsonRpcException(-32000, $e->getMessage());
-                        $response->setError($jsonRpcException);
-                    }
-
-                    $callResponse->addResponse($response);
-                }
+                $this->processJsonRpcRequest($item, $callResponse, $methodResolver);
             }
         }
+    }
 
-        // 通知不应有响应
-        $this->assertEmpty($callResponse->getResponseList());
+    private function processJsonRpcRequest(
+        JsonRpcRequest $item,
+        JsonRpcCallResponse $callResponse,
+        callable $methodResolver,
+    ): void {
+        if ($item->isNotification()) {
+            $this->processNotification($item, $methodResolver);
+        } else {
+            $response = $this->processRegularRequest($item, $methodResolver);
+            $callResponse->addResponse($response);
+        }
+    }
+
+    private function processNotification(JsonRpcRequest $item, callable $methodResolver): void
+    {
+        try {
+            $methodName = $item->getMethod();
+            $method = $methodResolver($methodName);
+            $this->assertInstanceOf(JsonRpcMethodInterface::class, $method);
+            call_user_func($method, $item); // 执行但忽略结果
+        } catch (\Throwable $e) {
+            // 通知不需要返回错误
+        }
+    }
+
+    private function processRegularRequest(JsonRpcRequest $item, callable $methodResolver): JsonRpcResponse
+    {
+        $response = new JsonRpcResponse();
+        $response->setJsonrpc('2.0');
+        $response->setId($item->getId());
+
+        try {
+            $methodName = $item->getMethod();
+            $method = $methodResolver($methodName);
+            $this->assertInstanceOf(JsonRpcMethodInterface::class, $method);
+            $result = call_user_func($method, $item);
+            $response->setResult($result);
+        } catch (JsonRpcException $e) {
+            $response->setError($e);
+        } catch (\Throwable $e) {
+            $jsonRpcException = new JsonRpcInternalErrorException($e);
+            $response->setError($jsonRpcException);
+        }
+
+        return $response;
+    }
+
+    public function testAddExceptionItem(): void
+    {
+        $callRequest = new JsonRpcCallRequest(false);
+        $exception = new \RuntimeException('Test exception');
+
+        $callRequest->addExceptionItem($exception);
+
+        $items = $callRequest->getItemList();
+        $this->assertCount(1, $items);
+        $this->assertInstanceOf(\Exception::class, $items[0]);
+        $this->assertEquals('Test exception', $items[0]->getMessage());
+    }
+
+    public function testAddRequestItem(): void
+    {
+        $callRequest = new JsonRpcCallRequest(false);
+        $request = new JsonRpcRequest();
+        $request->setJsonrpc('2.0');
+        $request->setMethod('test');
+        $request->setId('1');
+
+        $callRequest->addRequestItem($request);
+
+        $items = $callRequest->getItemList();
+        $this->assertCount(1, $items);
+        $this->assertInstanceOf(JsonRpcRequest::class, $items[0]);
+        $this->assertEquals('test', $items[0]->getMethod());
+        $this->assertEquals('1', $items[0]->getId());
     }
 }

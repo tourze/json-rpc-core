@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Event;
 
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
 /**
- * 在JsonRPC方法执行前触发
+ * 在JsonRPC方法执行前触发.
  */
 class BeforeMethodApplyEvent extends MethodInterruptEvent
 {

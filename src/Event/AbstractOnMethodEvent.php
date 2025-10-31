@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Event;
 
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
 /**
- * Class AbstractOnMethodEvent
+ * Class AbstractOnMethodEvent.
  */
 abstract class AbstractOnMethodEvent implements JsonRpcServerEvent
 {

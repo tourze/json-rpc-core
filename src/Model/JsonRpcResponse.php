@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Model;
 
-use Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface;
 use Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException;
+use Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface;
 
 class JsonRpcResponse
 {
-    private $result;
+    private mixed $result = null;
 
     private ?JsonRpcExceptionInterface $error = null;
 
@@ -24,50 +26,42 @@ class JsonRpcResponse
     }
 
     /**
-     * @var string|null 请求ID
+     * @var int|string|null 请求ID
      */
-    private $id;
+    private int|string|null $id = null;
 
-    public function setId(mixed $id): self
+    public function setId(mixed $id): void
     {
         if (!is_string($id) && !is_int($id)) {
             throw new JsonRpcArgumentException('Id must be either an int or a string');
         }
 
         $this->id = $id;
-
-        return $this;
     }
 
-    public function getId()
+    public function getId(): int|string|null
     {
         return $this->id;
     }
 
     private bool $isNotification = false;
 
-    public function setResult(mixed $result): self
+    public function setResult(mixed $result): void
     {
         $this->result = $result;
-
-        return $this;
     }
 
-    public function setError(JsonRpcExceptionInterface $error): self
+    public function setError(JsonRpcExceptionInterface $error): void
     {
         $this->error = $error;
-
-        return $this;
     }
 
-    public function setIsNotification(bool $isNotification): self
+    public function setIsNotification(bool $isNotification): void
     {
         $this->isNotification = $isNotification;
-
-        return $this;
     }
 
-    public function getResult()
+    public function getResult(): mixed
     {
         return $this->result;
     }

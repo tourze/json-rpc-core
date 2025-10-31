@@ -1,0 +1,5 @@
+services:
+    -
+        class: Tourze\JsonRPC\Core\PHPStan\Rules\ApiExceptionThrowRule
+        tags:
+            - phpstan.rules.rule

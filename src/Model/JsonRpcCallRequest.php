@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Model;
 
 class JsonRpcCallRequest
@@ -11,18 +13,14 @@ class JsonRpcCallRequest
     {
     }
 
-    public function addRequestItem(JsonRpcRequest $item): self
+    public function addRequestItem(JsonRpcRequest $item): void
     {
         $this->itemList[] = $item;
-
-        return $this;
     }
 
-    public function addExceptionItem(\Exception $item): self
+    public function addExceptionItem(\Exception $item): void
     {
         $this->itemList[] = $item;
-
-        return $this;
     }
 
     public function isBatch(): bool

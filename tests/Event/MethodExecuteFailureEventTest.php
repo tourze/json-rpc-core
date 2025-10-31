@@ -5,17 +5,25 @@ declare(strict_types=1);
 namespace Tourze\JsonRPC\Core\Tests\Event;
 
 use Carbon\CarbonImmutable;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
+use Tourze\JsonRPC\Core\Event\AbstractOnMethodEvent;
+use Tourze\JsonRPC\Core\Event\JsonRpcServerEvent;
 use Tourze\JsonRPC\Core\Event\MethodExecuteFailureEvent;
+use Tourze\JsonRPC\Core\Exception\ApiException;
+use Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException;
+use Tourze\JsonRPC\Core\Exception\JsonRpcRuntimeException;
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
-use Tourze\JsonRPC\Core\Exception\JsonRpcRuntimeException;
 
 /**
- * 测试MethodExecuteFailureEvent方法执行失败事件
+ * 测试MethodExecuteFailureEvent方法执行失败事件.
+ *
+ * @internal
  */
-class MethodExecuteFailureEventTest extends TestCase
+#[CoversClass(MethodExecuteFailureEvent::class)]
+final class MethodExecuteFailureEventTest extends TestCase
 {
     private function createMockMethod(): JsonRpcMethodInterface
     {
@@ -49,9 +57,8 @@ class MethodExecuteFailureEventTest extends TestCase
         $event = new MethodExecuteFailureEvent();
         $exception = new \InvalidArgumentException('Invalid argument');
 
-        $returnedEvent = $event->setException($exception);
+        $event->setException($exception);
 
-        $this->assertSame($event, $returnedEvent);
         $this->assertSame($exception, $event->getException());
     }
 
@@ -78,7 +85,7 @@ class MethodExecuteFailureEventTest extends TestCase
     public function testCompleteFailureEvent(): void
     {
         $event = new MethodExecuteFailureEvent();
-        
+
         $startTime = CarbonImmutable::now()->subSeconds(1);
         $endTime = CarbonImmutable::now();
         $exception = new JsonRpcRuntimeException('Database connection failed');
@@ -107,8 +114,8 @@ class MethodExecuteFailureEventTest extends TestCase
     {
         $event = new MethodExecuteFailureEvent();
 
-        $this->assertInstanceOf(\Tourze\JsonRPC\Core\Event\AbstractOnMethodEvent::class, $event);
-        $this->assertInstanceOf(\Tourze\JsonRPC\Core\Event\JsonRpcServerEvent::class, $event);
+        $this->assertInstanceOf(AbstractOnMethodEvent::class, $event);
+        $this->assertInstanceOf(JsonRpcServerEvent::class, $event);
     }
 
     public function testDifferentExceptionTypes(): void
@@ -121,20 +128,20 @@ class MethodExecuteFailureEventTest extends TestCase
         $this->assertInstanceOf(JsonRpcRuntimeException::class, $event->getException());
 
         // 测试JsonRpcArgumentException
-        $argumentException = new \Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException('Invalid argument error');
+        $argumentException = new JsonRpcArgumentException('Invalid argument error');
         $event->setException($argumentException);
-        $this->assertInstanceOf(\Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException::class, $event->getException());
+        $this->assertInstanceOf(JsonRpcArgumentException::class, $event->getException());
 
         // 测试其他JsonRPC异常
-        $apiException = new \Tourze\JsonRPC\Core\Exception\ApiException('API error');
+        $apiException = new ApiException('API error');
         $event->setException($apiException);
-        $this->assertInstanceOf(\Tourze\JsonRPC\Core\Exception\ApiException::class, $event->getException());
+        $this->assertInstanceOf(ApiException::class, $event->getException());
     }
 
     public function testExecutionDuration(): void
     {
         $event = new MethodExecuteFailureEvent();
-        
+
         $startTime = CarbonImmutable::parse('2023-01-01 10:00:00');
         $endTime = CarbonImmutable::parse('2023-01-01 10:00:03');
 
@@ -145,4 +152,4 @@ class MethodExecuteFailureEventTest extends TestCase
         $duration = $event->getStartTime()->diffInSeconds($event->getEndTime());
         $this->assertEquals(3, $duration);
     }
-} 
+}

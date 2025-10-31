@@ -2,14 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Tourze\JsonRPC\Core\Tests\Unit\Exception;
+namespace Tourze\JsonRPC\Core\Tests\Exception;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\JsonRPC\Core\Exception\JsonRpcException;
 use Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface;
 use Tourze\JsonRPC\Core\Exception\JsonRpcInvalidParamsException;
+use Tourze\PHPUnitBase\AbstractExceptionTestCase;
 
-class JsonRpcInvalidParamsExceptionTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(JsonRpcInvalidParamsException::class)]
+final class JsonRpcInvalidParamsExceptionTest extends AbstractExceptionTestCase
 {
     public function testExceptionCreation(): void
     {
@@ -21,7 +26,7 @@ class JsonRpcInvalidParamsExceptionTest extends TestCase
         $this->assertEquals(JsonRpcInvalidParamsException::CODE, $exception->getCode());
         $this->assertEquals(-32602, $exception->getCode());
         $this->assertEquals('Invalid params', $exception->getMessage());
-        
+
         $errorData = $exception->getErrorData();
         $this->assertArrayHasKey(JsonRpcInvalidParamsException::DATA_VIOLATIONS_KEY, $errorData);
         $this->assertEquals($violations, $errorData[JsonRpcInvalidParamsException::DATA_VIOLATIONS_KEY]);
@@ -34,7 +39,7 @@ class JsonRpcInvalidParamsExceptionTest extends TestCase
 
         $this->assertEquals(JsonRpcInvalidParamsException::CODE, $exception->getCode());
         $this->assertEquals('Invalid params', $exception->getMessage());
-        
+
         $errorData = $exception->getErrorData();
         $this->assertArrayHasKey(JsonRpcInvalidParamsException::DATA_VIOLATIONS_KEY, $errorData);
         $this->assertEquals([], $errorData[JsonRpcInvalidParamsException::DATA_VIOLATIONS_KEY]);

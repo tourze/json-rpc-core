@@ -2,13 +2,17 @@
 
 namespace Tourze\JsonRPC\Core\Tests\Attribute;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Attribute\MethodParam;
 
 /**
- * 测试MethodParam属性类
+ * 测试MethodParam属性类.
+ *
+ * @internal
  */
-class MethodParamTest extends TestCase
+#[CoversClass(MethodParam::class)]
+final class MethodParamTest extends TestCase
 {
     /**
      * 测试构造函数默认值
@@ -38,7 +42,7 @@ class MethodParamTest extends TestCase
     }
 
     /**
-     * 测试属性的目标
+     * 测试属性的目标.
      */
     public function testAttributeTarget(): void
     {
@@ -49,8 +53,8 @@ class MethodParamTest extends TestCase
         $attribute = $attributes[0]->newInstance();
 
         // 检查属性是否只应用于属性
-        $this->assertTrue((bool)($attribute->flags & \Attribute::TARGET_PROPERTY));
-        $this->assertFalse((bool)($attribute->flags & \Attribute::TARGET_CLASS));
-        $this->assertFalse((bool)($attribute->flags & \Attribute::TARGET_METHOD));
+        $this->assertTrue((bool) ($attribute->flags & \Attribute::TARGET_PROPERTY));
+        $this->assertFalse((bool) ($attribute->flags & \Attribute::TARGET_CLASS));
+        $this->assertFalse((bool) ($attribute->flags & \Attribute::TARGET_METHOD));
     }
 }

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Domain;
 
 /**
- * Class JsonRpcMethodResolverInterface
+ * Class JsonRpcMethodResolverInterface.
  */
 interface JsonRpcMethodResolverInterface
 {
@@ -13,7 +15,7 @@ interface JsonRpcMethodResolverInterface
     public function resolve(string $methodName): ?JsonRpcMethodInterface;
 
     /**
-     * Get all registered method names
+     * 获取所有已注册的方法名.
      *
      * @return string[]
      */

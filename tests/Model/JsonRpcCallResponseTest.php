@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Model;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Tourze\JsonRPC\Core\Exception\JsonRpcException;
 use Tourze\JsonRPC\Core\Model\JsonRpcCallResponse;
 use Tourze\JsonRPC\Core\Model\JsonRpcResponse;
+use Tourze\JsonRPC\Core\Tests\Exception\TestJsonRpcException;
 
-class JsonRpcCallResponseTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(JsonRpcCallResponse::class)]
+final class JsonRpcCallResponseTest extends TestCase
 {
     public function testNonBatchResponse(): void
     {
@@ -35,7 +40,7 @@ class JsonRpcCallResponseTest extends TestCase
         $response1->setId(1);
 
         $response2 = new JsonRpcResponse();
-        $response2->setError(new JsonRpcException(100, 'Test error'));
+        $response2->setError(new TestJsonRpcException(100, 'Test error'));
         $response2->setId(2);
 
         $callResponse->addResponse($response1);
@@ -53,9 +58,9 @@ class JsonRpcCallResponseTest extends TestCase
         $callResponse = new JsonRpcCallResponse(true);
 
         $responses = [];
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 5; ++$i) {
             $response = new JsonRpcResponse();
-            $response->setResult("Result $i");
+            $response->setResult("Result {$i}");
             $response->setId($i);
 
             $callResponse->addResponse($response);

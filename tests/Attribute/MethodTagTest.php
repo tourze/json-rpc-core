@@ -2,13 +2,17 @@
 
 namespace Tourze\JsonRPC\Core\Tests\Attribute;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Attribute\MethodTag;
 
 /**
- * 测试MethodTag属性类
+ * 测试MethodTag属性类.
+ *
+ * @internal
  */
-class MethodTagTest extends TestCase
+#[CoversClass(MethodTag::class)]
+final class MethodTagTest extends TestCase
 {
     /**
      * 测试构造函数默认值
@@ -35,7 +39,7 @@ class MethodTagTest extends TestCase
     }
 
     /**
-     * 测试属性的目标和重复性
+     * 测试属性的目标和重复性.
      */
     public function testAttributeTargetAndRepeatability(): void
     {
@@ -46,9 +50,9 @@ class MethodTagTest extends TestCase
         $attribute = $attributes[0]->newInstance();
 
         // 检查属性是否可以应用于类
-        $this->assertTrue((bool)($attribute->flags & \Attribute::TARGET_CLASS));
+        $this->assertTrue((bool) ($attribute->flags & \Attribute::TARGET_CLASS));
 
         // 检查属性是否可重复
-        $this->assertTrue((bool)($attribute->flags & \Attribute::IS_REPEATABLE));
+        $this->assertTrue((bool) ($attribute->flags & \Attribute::IS_REPEATABLE));
     }
 }

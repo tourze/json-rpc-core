@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Event;
 
 use Symfony\Contracts\EventDispatcher\Event;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 
 /**
- * 通用的方法拦截事件
+ * 通用的方法拦截事件.
  */
 abstract class MethodInterruptEvent extends Event
 {

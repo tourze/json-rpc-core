@@ -2,21 +2,26 @@
 
 declare(strict_types=1);
 
-namespace Tourze\JsonRPC\Core\Tests\Unit\Exception;
+namespace Tourze\JsonRPC\Core\Tests\Exception;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\JsonRPC\Core\Exception\JsonRpcException;
 use Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface;
 use Tourze\JsonRPC\Core\Exception\JsonRpcParseErrorException;
+use Tourze\PHPUnitBase\AbstractExceptionTestCase;
 
-class JsonRpcParseErrorExceptionTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(JsonRpcParseErrorException::class)]
+final class JsonRpcParseErrorExceptionTest extends AbstractExceptionTestCase
 {
     public function testExceptionCreation(): void
     {
         $content = '{"invalid": json}';
         $parseErrorCode = JSON_ERROR_SYNTAX;
         $parseErrorMessage = 'Syntax error';
-        
+
         $exception = new JsonRpcParseErrorException($content, $parseErrorCode, $parseErrorMessage);
 
         $this->assertInstanceOf(JsonRpcExceptionInterface::class, $exception);
@@ -32,7 +37,7 @@ class JsonRpcParseErrorExceptionTest extends TestCase
     public function testExceptionCreationWithContentOnly(): void
     {
         $content = '{"invalid": json}';
-        
+
         $exception = new JsonRpcParseErrorException($content);
 
         $this->assertEquals(JsonRpcParseErrorException::CODE, $exception->getCode());
@@ -46,7 +51,7 @@ class JsonRpcParseErrorExceptionTest extends TestCase
     {
         $content = '{"invalid": json}';
         $parseErrorCode = JSON_ERROR_SYNTAX;
-        
+
         $exception = new JsonRpcParseErrorException($content, $parseErrorCode);
 
         $this->assertEquals($content, $exception->getContent());
@@ -76,7 +81,7 @@ class JsonRpcParseErrorExceptionTest extends TestCase
         $content = ['invalid' => 'data'];
         $parseErrorCode = JSON_ERROR_DEPTH;
         $parseErrorMessage = 'Maximum stack depth exceeded';
-        
+
         $exception = new JsonRpcParseErrorException($content, $parseErrorCode, $parseErrorMessage);
 
         $this->assertEquals($content, $exception->getContent());

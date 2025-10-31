@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Exception;
 
 /**
- * Class JsonRpcInvalidRequestException
+ * JsonRPC 无效请求异常.
  */
 class JsonRpcInvalidRequestException extends JsonRpcException
 {
@@ -12,12 +14,12 @@ class JsonRpcInvalidRequestException extends JsonRpcException
     /**
      * @param string $description Optional description of the issue
      */
-    public function __construct(private $content, private readonly string $description = '')
+    public function __construct(private mixed $content, private readonly string $description = '')
     {
         parent::__construct(self::CODE, "Invalid request: {$this->description}");
     }
 
-    public function getContent()
+    public function getContent(): mixed
     {
         return $this->content;
     }

@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Exception;
 
 use Tourze\BacktraceHelper\ExceptionPrinter;
 
 /**
- * Class JsonRpcInternalErrorException
+ * JsonRpc 内部错误异常类。
  */
 class JsonRpcInternalErrorException extends JsonRpcException
 {
@@ -16,23 +18,26 @@ class JsonRpcInternalErrorException extends JsonRpcException
     public function __construct(?\Throwable $previousException = null)
     {
         $data = [];
-        
-        if ($previousException !== null) {
-            if ('prod' === $_ENV['APP_ENV']) {
+
+        if (null !== $previousException) {
+            if ('prod' === ($_ENV['APP_ENV'] ?? '')) {
                 $prevMessage = $previousException->getMessage();
             } else {
                 $prevMessage = ExceptionPrinter::exception($previousException);
             }
-            if ($_ENV['JSON_RPC_RESPONSE_FULL_ERROR'] ?? false) {
+            if (filter_var($_ENV['JSON_RPC_RESPONSE_FULL_ERROR'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
                 $prevMessage = ExceptionPrinter::exception($previousException);
             }
-            
+
             $data = [self::DATA_PREVIOUS_KEY => $prevMessage];
         }
 
+        $message = $_ENV['JSON_RPC_RESPONSE_EXCEPTION_MESSAGE'] ?? 'Internal error';
+        assert(is_string($message));
+
         parent::__construct(
             self::CODE,
-            $_ENV['JSON_RPC_RESPONSE_EXCEPTION_MASSAGE'] ?? 'Internal error',
+            $message,
             $data
         );
     }

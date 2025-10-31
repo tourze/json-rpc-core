@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Model;
 
 class JsonRpcCallResponse
@@ -11,11 +13,9 @@ class JsonRpcCallResponse
     {
     }
 
-    public function addResponse(JsonRpcResponse $response): self
+    public function addResponse(JsonRpcResponse $response): void
     {
         $this->responseList[] = $response;
-
-        return $this;
     }
 
     public function isBatch(): bool

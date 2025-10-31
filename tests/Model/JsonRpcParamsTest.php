@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Model;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 
-class JsonRpcParamsTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(JsonRpcParams::class)]
+final class JsonRpcParamsTest extends TestCase
 {
     public function testJsonRpcParamsCreation(): void
     {

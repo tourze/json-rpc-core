@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Model;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Tourze\JsonRPC\Core\Exception\JsonRpcException;
-use Tourze\JsonRPC\Core\Model\JsonRpcResponse;
 use Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException;
+use Tourze\JsonRPC\Core\Model\JsonRpcResponse;
+use Tourze\JsonRPC\Core\Tests\Exception\TestJsonRpcException;
 
-class JsonRpcResponseTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(JsonRpcResponse::class)]
+final class JsonRpcResponseTest extends TestCase
 {
     public function testDefaultJsonRpcVersion(): void
     {
@@ -58,7 +63,7 @@ class JsonRpcResponseTest extends TestCase
     public function testSetGetError(): void
     {
         $response = new JsonRpcResponse();
-        $error = new JsonRpcException(100, 'Test error', ['detail' => 'Additional info']);
+        $error = new TestJsonRpcException(100, 'Test error', ['detail' => 'Additional info']);
 
         $response->setError($error);
         $this->assertSame($error, $response->getError());

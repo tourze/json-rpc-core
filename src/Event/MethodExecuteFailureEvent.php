@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\JsonRPC\Core\Event;
 
 use Carbon\CarbonInterface;
 
 /**
- * Class OnMethodFailureEvent
+ * Class OnMethodFailureEvent.
  *
  * Dispatched only in case JSON-RPC method throw an exception during execution
  */
@@ -18,11 +20,9 @@ class MethodExecuteFailureEvent extends AbstractOnMethodEvent
         return $this->exception;
     }
 
-    public function setException(\Throwable $exception): self
+    public function setException(\Throwable $exception): void
     {
         $this->exception = $exception;
-
-        return $this;
     }
 
     private CarbonInterface $startTime;

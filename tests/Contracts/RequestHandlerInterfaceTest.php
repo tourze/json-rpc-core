@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Contracts;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Contracts\RequestHandlerInterface;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
@@ -12,16 +13,21 @@ use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
 /**
- * 测试RequestHandlerInterface接口
+ * 测试RequestHandlerInterface接口.
+ *
+ * @internal
  */
-class RequestHandlerInterfaceTest extends TestCase
+#[CoversClass(RequestHandlerInterface::class)]
+final class RequestHandlerInterfaceTest extends TestCase
 {
     private function createMockMethod(): JsonRpcMethodInterface
     {
         return new class implements JsonRpcMethodInterface {
             public function __invoke(JsonRpcRequest $request): mixed
             {
-                return ['echo' => $request->getParams()->all()];
+                $params = $request->getParams();
+
+                return ['echo' => null !== $params ? $params->all() : []];
             }
 
             public function execute(): array
@@ -34,7 +40,7 @@ class RequestHandlerInterfaceTest extends TestCase
     private function createMockHandler(): RequestHandlerInterface
     {
         $mockMethod = $this->createMockMethod();
-        
+
         return new class($mockMethod) implements RequestHandlerInterface {
             public function __construct(private readonly JsonRpcMethodInterface $mockMethod)
             {
@@ -43,15 +49,13 @@ class RequestHandlerInterfaceTest extends TestCase
             public function resolveMethod(JsonRpcRequest $request): JsonRpcMethodInterface
             {
                 $methodName = $request->getMethod();
-                
+
                 // 简单的方法解析逻辑
-                if (in_array($methodName, ['echo', 'test.method', 'user.create'])) {
+                if (in_array($methodName, ['echo', 'test.method', 'user.create'], true)) {
                     return $this->mockMethod;
                 }
-                
-                throw new JsonRpcMethodNotFoundException($methodName, [
-                    'available_methods' => ['echo', 'test.method', 'user.create']
-                ]);
+
+                throw new JsonRpcMethodNotFoundException($methodName, ['available_methods' => ['echo', 'test.method', 'user.create']]);
             }
         };
     }
@@ -78,9 +82,9 @@ class RequestHandlerInterfaceTest extends TestCase
     public function testResolveMethodWithDifferentValidMethods(): void
     {
         $handler = $this->createMockHandler();
-        
+
         $validMethods = ['echo', 'test.method', 'user.create'];
-        
+
         foreach ($validMethods as $methodName) {
             $request = new JsonRpcRequest();
             $request->setMethod($methodName);
@@ -129,15 +133,16 @@ class RequestHandlerInterfaceTest extends TestCase
         $request->setParams(new JsonRpcParams([
             'name' => 'John Doe',
             'email' => 'john@example.com',
-            'role' => 'admin'
+            'role' => 'admin',
         ]));
 
         $method = $handler->resolveMethod($request);
 
         $this->assertInstanceOf(JsonRpcMethodInterface::class, $method);
-        
+
         // 验证方法可以处理复杂参数
         $result = $method($request);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('echo', $result);
     }
 
@@ -150,11 +155,14 @@ class RequestHandlerInterfaceTest extends TestCase
 
         try {
             $handler->resolveMethod($request);
-            $this->fail('Expected JsonRpcMethodNotFoundException to be thrown');
+            self::fail('Expected JsonRpcMethodNotFoundException to be thrown');
         } catch (JsonRpcMethodNotFoundException $e) {
             $this->assertEquals('unknown.method', $e->getMethodName());
-            $this->assertArrayHasKey('available_methods', $e->getContext());
-            $this->assertContains('echo', $e->getContext()['available_methods']);
+            $context = $e->getContext();
+            $this->assertIsArray($context);
+            $this->assertArrayHasKey('available_methods', $context);
+            $this->assertIsArray($context['available_methods']);
+            $this->assertContains('echo', $context['available_methods']);
         }
     }
 
@@ -167,8 +175,8 @@ class RequestHandlerInterfaceTest extends TestCase
         // 不设置ID，使其成为通知
 
         $this->assertTrue($request->isNotification());
-        
+
         $method = $handler->resolveMethod($request);
         $this->assertInstanceOf(JsonRpcMethodInterface::class, $method);
     }
-} 
+}

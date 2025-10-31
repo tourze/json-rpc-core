@@ -4,20 +4,27 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\Event;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Symfony\Contracts\EventDispatcher\Event;
 use Tourze\JsonRPC\Core\Event\MethodExecutingEvent;
+use Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface;
+use Tourze\JsonRPC\Core\Exception\JsonRpcMethodNotFoundException;
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 use Tourze\JsonRPC\Core\Model\JsonRpcResponse;
+use Tourze\PHPUnitSymfonyUnitTest\AbstractEventTestCase;
 
 /**
- * 测试MethodExecutingEvent方法执行中事件
+ * 测试MethodExecutingEvent方法执行中事件.
+ *
+ * @internal
  */
-class MethodExecutingEventTest extends TestCase
+#[CoversClass(MethodExecutingEvent::class)]
+final class MethodExecutingEventTest extends AbstractEventTestCase
 {
     public function testSetAndGetItem(): void
     {
-        $event = new MethodExecutingEvent();
+        $event = new class extends MethodExecutingEvent {};
         $request = new JsonRpcRequest();
         $request->setMethod('user.create');
         $request->setId('123');
@@ -32,7 +39,7 @@ class MethodExecutingEventTest extends TestCase
 
     public function testSetAndGetResponse(): void
     {
-        $event = new MethodExecutingEvent();
+        $event = new class extends MethodExecutingEvent {};
         $response = new JsonRpcResponse();
         $response->setResult(['success' => true]);
         $response->setId('456');
@@ -49,7 +56,7 @@ class MethodExecutingEventTest extends TestCase
 
     public function testResponseCanBeSetToNull(): void
     {
-        $event = new MethodExecutingEvent();
+        $event = new class extends MethodExecutingEvent {};
         $response = new JsonRpcResponse();
         $response->setResult(['data' => 'test']);
 
@@ -62,8 +69,8 @@ class MethodExecutingEventTest extends TestCase
 
     public function testCompleteEventSetup(): void
     {
-        $event = new MethodExecutingEvent();
-        
+        $event = new class extends MethodExecutingEvent {};
+
         // 创建请求
         $request = new JsonRpcRequest();
         $request->setMethod('product.search');
@@ -81,21 +88,27 @@ class MethodExecutingEventTest extends TestCase
         // 验证所有属性
         $this->assertEquals('product.search', $event->getItem()->getMethod());
         $this->assertEquals('search-123', $event->getItem()->getId());
-        $this->assertEquals(['query' => 'laptop', 'limit' => 10], $event->getItem()->getParams()->all());
-        $this->assertEquals(['products' => [['id' => 1, 'name' => 'Laptop']]], $event->getResponse()->getResult());
-        $this->assertEquals('search-123', $event->getResponse()->getId());
+
+        $params = $event->getItem()->getParams();
+        $this->assertNotNull($params);
+        $this->assertEquals(['query' => 'laptop', 'limit' => 10], $params->all());
+
+        $response = $event->getResponse();
+        $this->assertNotNull($response);
+        $this->assertEquals(['products' => [['id' => 1, 'name' => 'Laptop']]], $response->getResult());
+        $this->assertEquals('search-123', $response->getId());
     }
 
     public function testEventInheritance(): void
     {
-        $event = new MethodExecutingEvent();
+        $event = new class extends MethodExecutingEvent {};
 
-        $this->assertInstanceOf(\Symfony\Contracts\EventDispatcher\Event::class, $event);
+        $this->assertInstanceOf(Event::class, $event);
     }
 
     public function testEventWithNotificationRequest(): void
     {
-        $event = new MethodExecutingEvent();
+        $event = new class extends MethodExecutingEvent {};
         $request = new JsonRpcRequest();
         $request->setMethod('log.info');
         $request->setParams(new JsonRpcParams(['message' => 'User logged in']));
@@ -110,15 +123,15 @@ class MethodExecutingEventTest extends TestCase
 
     public function testEventWithErrorResponse(): void
     {
-        $event = new MethodExecutingEvent();
-        
+        $event = new class extends MethodExecutingEvent {};
+
         $request = new JsonRpcRequest();
         $request->setMethod('invalid.method');
         $request->setId('error-test');
-        
+
         $response = new JsonRpcResponse();
-        $error = new \Tourze\JsonRPC\Core\Exception\JsonRpcMethodNotFoundException('invalid.method', [
-            'method' => 'invalid.method'
+        $error = new JsonRpcMethodNotFoundException('invalid.method', [
+            'method' => 'invalid.method',
         ]);
         $response->setError($error);
         $response->setId('error-test');
@@ -127,20 +140,24 @@ class MethodExecutingEventTest extends TestCase
         $event->setResponse($response);
 
         $this->assertEquals('invalid.method', $event->getItem()->getMethod());
-        $this->assertNotNull($event->getResponse()->getError());
-        $this->assertInstanceOf(\Tourze\JsonRPC\Core\Exception\JsonRpcExceptionInterface::class, $event->getResponse()->getError());
-        $this->assertEquals('Method not found', $event->getResponse()->getError()->getErrorMessage());
+
+        $response = $event->getResponse();
+        $this->assertNotNull($response);
+        $error = $response->getError();
+        $this->assertNotNull($error);
+        $this->assertInstanceOf(JsonRpcExceptionInterface::class, $error);
+        $this->assertEquals('Method not found', $error->getErrorMessage());
     }
 
     public function testMultipleRequestUpdates(): void
     {
-        $event = new MethodExecutingEvent();
+        $event = new class extends MethodExecutingEvent {};
 
         // 第一个请求
         $request1 = new JsonRpcRequest();
         $request1->setMethod('method1');
         $request1->setId('1');
-        
+
         $event->setItem($request1);
         $this->assertEquals('method1', $event->getItem()->getMethod());
 
@@ -148,7 +165,7 @@ class MethodExecutingEventTest extends TestCase
         $request2 = new JsonRpcRequest();
         $request2->setMethod('method2');
         $request2->setId('2');
-        
+
         $event->setItem($request2);
         $this->assertEquals('method2', $event->getItem()->getMethod());
         $this->assertEquals('2', $event->getItem()->getId());
@@ -156,16 +173,21 @@ class MethodExecutingEventTest extends TestCase
 
     public function testEventClassStructure(): void
     {
-        $event = new MethodExecutingEvent();
+        $event = new class extends MethodExecutingEvent {};
         $reflection = new \ReflectionClass($event);
-        
-        $this->assertEquals('Tourze\JsonRPC\Core\Event', $reflection->getNamespaceName());
-        $this->assertEquals('MethodExecutingEvent', $reflection->getShortName());
+
+        // 验证匿名类的属性
         $this->assertFalse($reflection->isAbstract());
         $this->assertTrue($reflection->isInstantiable());
-        
-        // 验证有正确的属性
-        $this->assertTrue($reflection->hasProperty('item'));
-        $this->assertTrue($reflection->hasProperty('response'));
+        $this->assertTrue($reflection->isSubclassOf(MethodExecutingEvent::class));
+
+        // 验证父类的属性（私有属性在子类中不可见，但继承的方法可以访问）
+        $parentReflection = new \ReflectionClass(MethodExecutingEvent::class);
+        $this->assertTrue($parentReflection->hasProperty('item'));
+        $this->assertTrue($parentReflection->hasProperty('response'));
+        $this->assertTrue($parentReflection->hasMethod('getItem'));
+        $this->assertTrue($parentReflection->hasMethod('setItem'));
+        $this->assertTrue($parentReflection->hasMethod('getResponse'));
+        $this->assertTrue($parentReflection->hasMethod('setResponse'));
     }
-} 
+}
