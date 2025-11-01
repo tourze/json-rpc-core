@@ -28,11 +28,6 @@ use Tourze\JsonRPC\Core\Tests\AbstractProcedureTestCase;
 #[RunTestsInSeparateProcesses]
 final class BaseProcedureTest extends AbstractProcedureTestCase
 {
-    /**
-     * 指定被测的 Procedure 类.
-     */
-    protected const PROCEDURE_CLASS = BaseProcedure::class;
-
     protected function onSetUp(): void
     {
         // 无需额外的初始化逻辑

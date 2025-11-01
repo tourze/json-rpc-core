@@ -15,20 +15,13 @@ use Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase;
  *
  * 设计说明：
  * - 提供 Procedure 测试的通用断言方法
- * - 通过 PROCEDURE_CLASS 常量模式控制测试行为
- * - 子类必须覆盖 PROCEDURE_CLASS 常量指定被测类
+ * - 子类必须使用 #[CoversClass] 注解指定被测的 Procedure 类
  * - 此类被 NoAbstractIntegrationTestCaseRule 白名单允许，因为它遵循 *TestCase 命名约定
  */
 #[CoversClass(AbstractIntegrationTestCase::class)]
 #[RunTestsInSeparateProcesses]
 abstract class AbstractProcedureTestCase extends AbstractIntegrationTestCase
 {
-    /**
-     * 子类必须覆盖此常量，指定被测的 Procedure 类.
-     *
-     * @var class-string
-     */
-    protected const PROCEDURE_CLASS = '';
 
     /**
      * {@inheritDoc}
@@ -49,21 +42,19 @@ abstract class AbstractProcedureTestCase extends AbstractIntegrationTestCase
      */
     final public function testProcedureHasRequiredAttributes(): void
     {
-        // 如果子类未覆盖常量，跳过测试
-        if ('' === static::PROCEDURE_CLASS) {
+        $reflectionClass = new \ReflectionClass($this);
+        $coverClass = TestCaseHelper::extractCoverClass($reflectionClass);
+
+        if (null === $coverClass) {
             $this->markTestSkipped(
-                'PROCEDURE_CLASS 常量未设置。请在子类中覆盖此常量指定被测的 Procedure 类。'
+                '未找到 #[CoversClass] 注解。请在测试类上添加 #[CoversClass(YourProcedure::class)] 注解。'
             );
         }
 
-        $reflectionClass = new \ReflectionClass($this);
-        $coverClass = TestCaseHelper::extractCoverClass($reflectionClass);
-        if (null === $coverClass) {
-            return;
-        }
-
         if (!class_exists($coverClass)) {
-            return;
+            $this->markTestSkipped(
+                sprintf('CoversClass 指定的类 "%s" 不存在', $coverClass)
+            );
         }
 
         $reflection = new \ReflectionClass($coverClass);
@@ -71,8 +62,14 @@ abstract class AbstractProcedureTestCase extends AbstractIntegrationTestCase
 
         $attributeNames = array_map(fn ($attr) => $attr->getName(), $attributes);
 
-        $this->assertContains(MethodTag::class, $attributeNames);
-        $this->assertContains(MethodDoc::class, $attributeNames);
-        $this->assertContains(MethodExpose::class, $attributeNames);
+        $this->assertContains(MethodTag::class, $attributeNames,
+            sprintf('Procedure 类 "%s" 缺少 #[MethodTag] 注解', $coverClass)
+        );
+        $this->assertContains(MethodDoc::class, $attributeNames,
+            sprintf('Procedure 类 "%s" 缺少 #[MethodDoc] 注解', $coverClass)
+        );
+        $this->assertContains(MethodExpose::class, $attributeNames,
+            sprintf('Procedure 类 "%s" 缺少 #[MethodExpose] 注解', $coverClass)
+        );
     }
 }
