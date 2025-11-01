@@ -4,8 +4,8 @@ namespace Tourze\JsonRPC\Core\Tests\Traits;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Tourze\JsonRPC\Core\Tests\Fixtures\TestClassWithInterruptCallbackTrait;
 use Tourze\JsonRPC\Core\Traits\InterruptCallbackTrait;
-use Tourze\JsonRPCEndpointBundle\Tests\Fixtures\TestClassWithInterruptCallbackTrait;
 
 /**
  * @internal
