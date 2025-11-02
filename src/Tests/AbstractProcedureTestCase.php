@@ -22,7 +22,6 @@ use Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase;
 #[RunTestsInSeparateProcesses]
 abstract class AbstractProcedureTestCase extends AbstractIntegrationTestCase
 {
-
     /**
      * {@inheritDoc}
      */
@@ -46,13 +45,13 @@ abstract class AbstractProcedureTestCase extends AbstractIntegrationTestCase
         $coverClass = TestCaseHelper::extractCoverClass($reflectionClass);
 
         if (null === $coverClass) {
-            $this->markTestSkipped(
+            self::markTestSkipped(
                 '未找到 #[CoversClass] 注解。请在测试类上添加 #[CoversClass(YourProcedure::class)] 注解。'
             );
         }
 
         if (!class_exists($coverClass)) {
-            $this->markTestSkipped(
+            self::markTestSkipped(
                 sprintf('CoversClass 指定的类 "%s" 不存在', $coverClass)
             );
         }

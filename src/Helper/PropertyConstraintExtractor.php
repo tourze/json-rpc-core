@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tourze\JsonRPC\Core\Helper;
 
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\AtLeastOneOf;
 use Symfony\Component\Validator\Constraints\Collection;
+use Symfony\Component\Validator\Constraints\Type;
 
 class PropertyConstraintExtractor
 {
@@ -74,7 +76,7 @@ class PropertyConstraintExtractor
         $constraints = [];
 
         $typeConstraint = self::extractTypeConstraint($property);
-        if ($typeConstraint instanceof \Symfony\Component\Validator\Constraints\Type || $typeConstraint instanceof \Symfony\Component\Validator\Constraints\AtLeastOneOf) {
+        if ($typeConstraint instanceof Type || $typeConstraint instanceof AtLeastOneOf) {
             $constraints[] = TypeValidatorFactory::makeTypeCompatible($typeConstraint);
         }
 
@@ -122,7 +124,7 @@ class PropertyConstraintExtractor
     private static function extractTypeConstraintOnly(\ReflectionProperty $property): ?Constraint
     {
         $typeConstraint = self::extractTypeConstraint($property);
-        if ($typeConstraint instanceof \Symfony\Component\Validator\Constraints\Type || $typeConstraint instanceof \Symfony\Component\Validator\Constraints\AtLeastOneOf) {
+        if ($typeConstraint instanceof Type || $typeConstraint instanceof AtLeastOneOf) {
             return TypeValidatorFactory::makeTypeCompatible($typeConstraint);
         }
 
