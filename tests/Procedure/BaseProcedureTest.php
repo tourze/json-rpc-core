@@ -17,9 +17,9 @@ use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Domain\MethodWithResultDocInterface;
 use Tourze\JsonRPC\Core\Domain\MethodWithValidatedParamsInterface;
 use Tourze\JsonRPC\Core\Procedure\BaseProcedure;
+use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Result\SuccessResult;
 use Tourze\JsonRPC\Core\Tests\Fixtures\TestProcedureParam;
-use Tourze\PHPUnitJsonRPC\AbstractProcedureTestCase;
 
 /**
  * 测试 BaseProcedure 抽象类 - 参数对象模式
@@ -28,13 +28,8 @@ use Tourze\PHPUnitJsonRPC\AbstractProcedureTestCase;
  */
 #[CoversClass(BaseProcedure::class)]
 #[RunTestsInSeparateProcesses]
-final class BaseProcedureTest extends AbstractProcedureTestCase
+final class BaseProcedureTest extends TestCase
 {
-    protected function onSetUp(): void
-    {
-        // 无需额外的初始化逻辑
-    }
-
     private function createTestProcedure(): BaseProcedure
     {
         return new #[MethodTag(name: 'test')]
