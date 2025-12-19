@@ -3,11 +3,9 @@
 namespace Tourze\JsonRPC\Core\Tests\Serialization;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Exception\JsonRpcInvalidRequestException;
 use Tourze\JsonRPC\Core\Model\JsonRpcCallRequest;
-use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 use Tourze\JsonRPC\Core\Serialization\JsonRpcCallDenormalizer;
 use Tourze\JsonRPC\Core\Serialization\JsonRpcRequestDenormalizer;
 
@@ -19,34 +17,31 @@ final class JsonRpcCallDenormalizerTest extends TestCase
 {
     private JsonRpcCallDenormalizer $denormalizer;
 
-    private JsonRpcRequestDenormalizer&MockObject $requestDenormalizer;
+    private JsonRpcRequestDenormalizer $requestDenormalizer;
 
     protected function setUp(): void
     {
-        // 创建mock对象
-        $this->requestDenormalizer = $this->createMock(JsonRpcRequestDenormalizer::class);
+        // 使用真实的 JsonRpcRequestDenormalizer 实例
+        $this->requestDenormalizer = new JsonRpcRequestDenormalizer();
 
-        // 直接创建JsonRpcCallDenormalizer实例（使用mock依赖）
+        // 创建 JsonRpcCallDenormalizer 实例
         $this->denormalizer = new JsonRpcCallDenormalizer($this->requestDenormalizer);
     }
 
     public function testDenormalizeWithSingleRequestReturnsNonBatchCall(): void
     {
         $decodedContent = ['jsonrpc' => '2.0', 'method' => 'test', 'id' => 1];
-        $jsonRpcRequest = new JsonRpcRequest();
-
-        $this->requestDenormalizer->expects($this->once())
-            ->method('denormalize')
-            ->with($decodedContent)
-            ->willReturn($jsonRpcRequest)
-        ;
 
         $result = $this->denormalizer->denormalize($decodedContent);
 
         $this->assertInstanceOf(JsonRpcCallRequest::class, $result);
         $this->assertFalse($result->isBatch());
         $this->assertCount(1, $result->getItemList());
-        $this->assertSame($jsonRpcRequest, $result->getItemList()[0]);
+
+        $jsonRpcRequest = $result->getItemList()[0];
+        $this->assertSame('2.0', $jsonRpcRequest->getJsonrpc());
+        $this->assertSame('test', $jsonRpcRequest->getMethod());
+        $this->assertSame(1, $jsonRpcRequest->getId());
     }
 
     public function testDenormalizeWithBatchRequestReturnsBatchCall(): void
@@ -55,34 +50,29 @@ final class JsonRpcCallDenormalizerTest extends TestCase
             ['jsonrpc' => '2.0', 'method' => 'test1', 'id' => 1],
             ['jsonrpc' => '2.0', 'method' => 'test2', 'id' => 2],
         ];
-        $jsonRpcRequest1 = new JsonRpcRequest();
-        $jsonRpcRequest2 = new JsonRpcRequest();
-
-        $this->requestDenormalizer->expects($this->exactly(2))
-            ->method('denormalize')
-            ->willReturnOnConsecutiveCalls($jsonRpcRequest1, $jsonRpcRequest2)
-        ;
 
         $result = $this->denormalizer->denormalize($decodedContent);
 
         $this->assertInstanceOf(JsonRpcCallRequest::class, $result);
         $this->assertTrue($result->isBatch());
         $this->assertCount(2, $result->getItemList());
-        $this->assertSame($jsonRpcRequest1, $result->getItemList()[0]);
-        $this->assertSame($jsonRpcRequest2, $result->getItemList()[1]);
+
+        $jsonRpcRequest1 = $result->getItemList()[0];
+        $this->assertSame('2.0', $jsonRpcRequest1->getJsonrpc());
+        $this->assertSame('test1', $jsonRpcRequest1->getMethod());
+        $this->assertSame(1, $jsonRpcRequest1->getId());
+
+        $jsonRpcRequest2 = $result->getItemList()[1];
+        $this->assertSame('2.0', $jsonRpcRequest2->getJsonrpc());
+        $this->assertSame('test2', $jsonRpcRequest2->getMethod());
+        $this->assertSame(2, $jsonRpcRequest2->getId());
     }
 
     public function testDenormalizeWithEmptyArrayCallsDenormalizerWithEmptyArray(): void
     {
         $data = [];
 
-        // Mock期望会被调用一次，传入空数组
-        $this->requestDenormalizer->expects($this->once())
-            ->method('denormalize')
-            ->with([])
-            ->willThrowException(new JsonRpcInvalidRequestException([], '"jsonrpc" is a required key'))
-        ;
-
+        // 空数组会被当作非批量请求处理，传递给 requestDenormalizer 时会触发异常
         $this->expectException(JsonRpcInvalidRequestException::class);
         $this->expectExceptionMessage('"jsonrpc" is a required key');
 
@@ -91,48 +81,39 @@ final class JsonRpcCallDenormalizerTest extends TestCase
 
     public function testDenormalizeWithSingleRequestExceptionThrowsException(): void
     {
-        $decodedContent = ['jsonrpc' => '2.0', 'method' => 'test', 'id' => 1];
-        $exception = new \Exception('Test exception');
+        // 传入缺少必需字段的数据，触发真实的异常
+        $decodedContent = ['method' => 'test', 'id' => 1]; // 缺少 jsonrpc 字段
 
-        $this->requestDenormalizer->expects($this->once())
-            ->method('denormalize')
-            ->with($decodedContent)
-            ->willThrowException($exception)
-        ;
-
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Test exception');
+        $this->expectException(JsonRpcInvalidRequestException::class);
+        $this->expectExceptionMessage('"jsonrpc" is a required key');
 
         $this->denormalizer->denormalize($decodedContent);
     }
 
     public function testDenormalizeWithBatchRequestExceptionAddsExceptionToCall(): void
     {
+        // 第一个请求有效，第二个请求缺少必需字段会触发异常
         $decodedContent = [
             ['jsonrpc' => '2.0', 'method' => 'test1', 'id' => 1],
-            ['jsonrpc' => '2.0', 'method' => 'test2', 'id' => 2],
+            ['method' => 'test2', 'id' => 2], // 缺少 jsonrpc 字段
         ];
-        $jsonRpcRequest1 = new JsonRpcRequest();
-        $exception = new \Exception('Test exception');
-
-        $this->requestDenormalizer->expects($this->exactly(2))
-            ->method('denormalize')
-            ->willReturnCallback(function ($item) use ($jsonRpcRequest1, $exception) {
-                $this->assertIsArray($item);
-                if (1 === $item['id']) {
-                    return $jsonRpcRequest1;
-                }
-                throw $exception;
-            })
-        ;
 
         $result = $this->denormalizer->denormalize($decodedContent);
 
         $this->assertInstanceOf(JsonRpcCallRequest::class, $result);
         $this->assertTrue($result->isBatch());
         $this->assertCount(2, $result->getItemList());
-        $this->assertSame($jsonRpcRequest1, $result->getItemList()[0]);
-        $this->assertSame($exception, $result->getItemList()[1]);
+
+        // 第一个应该是有效的 JsonRpcRequest
+        $jsonRpcRequest1 = $result->getItemList()[0];
+        $this->assertSame('2.0', $jsonRpcRequest1->getJsonrpc());
+        $this->assertSame('test1', $jsonRpcRequest1->getMethod());
+        $this->assertSame(1, $jsonRpcRequest1->getId());
+
+        // 第二个应该是异常
+        $exception = $result->getItemList()[1];
+        $this->assertInstanceOf(\Exception::class, $exception);
+        $this->assertStringContainsString('"jsonrpc" is a required key', $exception->getMessage());
     }
 
     public function testGuessBatchOrNotWithNumericKeysReturnsTrue(): void

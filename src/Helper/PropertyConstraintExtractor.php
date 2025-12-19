@@ -130,4 +130,126 @@ class PropertyConstraintExtractor
 
         return null;
     }
+
+    /**
+     * 从构造器参数中提取约束（用于参数对象模式）
+     *
+     * @return Constraint|Collection|array<Constraint>|null
+     */
+    public static function extractConstraintFromParameter(\ReflectionParameter $parameter): Constraint|Collection|array|null
+    {
+        if (self::isEnumParameter($parameter)) {
+            return self::extractEnumConstraintFromParameter($parameter);
+        }
+
+        $constraints = self::extractAllConstraintsFromParameter($parameter);
+
+        if ([] === $constraints) {
+            return null;
+        }
+
+        if (1 === count($constraints)) {
+            return array_shift($constraints);
+        }
+
+        return self::extractTypeConstraintOnlyFromParameter($parameter);
+    }
+
+    private static function isEnumParameter(\ReflectionParameter $parameter): bool
+    {
+        $type = $parameter->getType();
+        if (!($type instanceof \ReflectionNamedType)) {
+            return false;
+        }
+
+        $name = $type->getName();
+
+        return class_exists($name) && is_subclass_of($name, \BackedEnum::class);
+    }
+
+    private static function extractEnumConstraintFromParameter(\ReflectionParameter $parameter): ?Constraint
+    {
+        $type = $parameter->getType();
+        if (!($type instanceof \ReflectionNamedType)) {
+            return null;
+        }
+
+        $name = $type->getName();
+        if (!class_exists($name) || !is_subclass_of($name, \BackedEnum::class)) {
+            return null;
+        }
+
+        /** @var class-string<\BackedEnum> $name */
+        $reflectionEnum = new \ReflectionEnum($name);
+        $backingType = $reflectionEnum->getBackingType();
+
+        if (null === $backingType) {
+            return null;
+        }
+
+        return TypeValidatorFactory::createFromTypeName($backingType->getName());
+    }
+
+    /**
+     * @return array<Constraint>
+     */
+    private static function extractAllConstraintsFromParameter(\ReflectionParameter $parameter): array
+    {
+        $constraints = [];
+
+        $typeConstraint = self::extractTypeConstraintFromParameter($parameter);
+        if ($typeConstraint instanceof Type || $typeConstraint instanceof AtLeastOneOf) {
+            $constraints[] = TypeValidatorFactory::makeTypeCompatible($typeConstraint);
+        }
+
+        $attributeConstraints = self::extractAttributeConstraintsFromParameter($parameter);
+
+        return array_merge($constraints, $attributeConstraints);
+    }
+
+    private static function extractTypeConstraintFromParameter(\ReflectionParameter $parameter): mixed
+    {
+        $type = $parameter->getType();
+        if (null === $type) {
+            return null;
+        }
+
+        return TypeValidatorFactory::createFromReflectionType($type);
+    }
+
+    /**
+     * @return array<Constraint>
+     */
+    private static function extractAttributeConstraintsFromParameter(\ReflectionParameter $parameter): array
+    {
+        $reflectionType = $parameter->getType();
+        if (!($reflectionType instanceof \ReflectionNamedType) || !$reflectionType->isBuiltin()) {
+            return [];
+        }
+
+        $constraints = [];
+        foreach ($parameter->getAttributes() as $attribute) {
+            if (is_subclass_of($attribute->getName(), Constraint::class)) {
+                $instance = $attribute->newInstance();
+                if ($instance instanceof Constraint) {
+                    $constraints[] = $instance;
+                }
+            }
+        }
+
+        return $constraints;
+    }
+
+    /**
+     * @return Constraint|null
+     */
+    private static function extractTypeConstraintOnlyFromParameter(\ReflectionParameter $parameter): ?Constraint
+    {
+        $typeConstraint = self::extractTypeConstraintFromParameter($parameter);
+        if ($typeConstraint instanceof Type || $typeConstraint instanceof AtLeastOneOf) {
+            return TypeValidatorFactory::makeTypeCompatible($typeConstraint);
+        }
+
+        return null;
+    }
 }

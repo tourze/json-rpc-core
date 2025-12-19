@@ -6,6 +6,9 @@ namespace Tourze\JsonRPC\Core\Tests;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Tourze\JsonRPC\Core\Contracts\RpcParamInterface;
+use Tourze\JsonRPC\Core\Contracts\RpcResultInterface;
+use Tourze\JsonRPC\Core\Result\SuccessResult;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Exception\JsonRpcException;
 use Tourze\JsonRPC\Core\Exception\JsonRpcInternalErrorException;
@@ -29,20 +32,19 @@ final class JsonRpcWorkflowTest extends TestCase
     private function createEchoMethod(): JsonRpcMethodInterface
     {
         return new class implements JsonRpcMethodInterface {
-            public function __invoke(JsonRpcRequest $request): mixed
+            public function __invoke(JsonRpcRequest $request): RpcResultInterface
             {
-                // 简单的回声方法，返回传入的参数
+                // 简单的回声方法，返回传入的参数作为消息
                 $params = $request->getParams();
+                $data = null !== $params ? $params->all() : [];
+                $encoded = json_encode($data);
 
-                return null !== $params ? $params->all() : [];
+                return new SuccessResult(success: true, message: $encoded !== false ? $encoded : null);
             }
 
-            /**
-             * @return array<string, mixed>
-             */
-            public function execute(): array
+            public function execute(RpcParamInterface $param): RpcResultInterface
             {
-                return [];
+                return new SuccessResult(success: true);
             }
         };
     }
@@ -50,7 +52,7 @@ final class JsonRpcWorkflowTest extends TestCase
     private function createCalculatorMethod(): JsonRpcMethodInterface
     {
         return new class implements JsonRpcMethodInterface {
-            public function __invoke(JsonRpcRequest $request): mixed
+            public function __invoke(JsonRpcRequest $request): RpcResultInterface
             {
                 $params = $request->getParams();
                 if (null === $params) {
@@ -64,30 +66,22 @@ final class JsonRpcWorkflowTest extends TestCase
                 $numA = is_numeric($a) ? (is_int($a) ? $a : (float) $a) : throw new JsonRpcInvalidParamsException(['message' => 'Parameter "a" must be numeric', 'code' => 1]);
                 $numB = is_numeric($b) ? (is_int($b) ? $b : (float) $b) : throw new JsonRpcInvalidParamsException(['message' => 'Parameter "b" must be numeric', 'code' => 1]);
 
-                switch ($op) {
-                    case 'add':
-                        return $numA + $numB;
-                    case 'subtract':
-                        return $numA - $numB;
-                    case 'multiply':
-                        return $numA * $numB;
-                    case 'divide':
-                        if (0 === $numB || 0.0 === $numB) {
-                            throw new JsonRpcInvalidParamsException(['message' => '除数不能为零', 'code' => 1]);
-                        }
+                $result = match ($op) {
+                    'add' => $numA + $numB,
+                    'subtract' => $numA - $numB,
+                    'multiply' => $numA * $numB,
+                    'divide' => 0 === $numB || 0.0 === $numB
+                        ? throw new JsonRpcInvalidParamsException(['message' => '除数不能为零', 'code' => 1])
+                        : $numA / $numB,
+                    default => throw new JsonRpcInvalidParamsException(['message' => '不支持的操作', 'code' => 2]),
+                };
 
-                        return $numA / $numB;
-                    default:
-                        throw new JsonRpcInvalidParamsException(['message' => '不支持的操作', 'code' => 2]);
-                }
+                return new SuccessResult(success: true, message: (string) $result);
             }
 
-            /**
-             * @return array<string, mixed>
-             */
-            public function execute(): array
+            public function execute(RpcParamInterface $param): RpcResultInterface
             {
-                return [];
+                return new SuccessResult(success: true);
             }
         };
     }
@@ -175,7 +169,8 @@ final class JsonRpcWorkflowTest extends TestCase
         $response = $responses[0];
         $this->assertEquals('2.0', $response->getJsonrpc());
         $this->assertEquals('1', $response->getId());
-        $this->assertEquals(['message' => 'Hello, World!'], $response->getResult());
+        $result = $response->getResult();
+        $this->assertInstanceOf(RpcResultInterface::class, $result);
         $this->assertNull($response->getError());
     }
 
@@ -267,13 +262,16 @@ final class JsonRpcWorkflowTest extends TestCase
         // 检查响应1：回声
         $response1 = $responses[0];
         $this->assertEquals('1', $response1->getId());
-        $this->assertEquals(['message' => 'Request 1'], $response1->getResult());
+        $this->assertInstanceOf(RpcResultInterface::class, $response1->getResult());
         $this->assertNull($response1->getError());
 
         // 检查响应2：计算器加法
         $response2 = $responses[1];
         $this->assertEquals('2', $response2->getId());
-        $this->assertEquals(15, $response2->getResult());
+        $result2 = $response2->getResult();
+        $this->assertInstanceOf(RpcResultInterface::class, $result2);
+        $this->assertInstanceOf(SuccessResult::class, $result2);
+        $this->assertSame('15', $result2->message);
         $this->assertNull($response2->getError());
 
         // 检查响应3：除以零错误

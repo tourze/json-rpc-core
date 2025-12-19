@@ -7,13 +7,16 @@ namespace Tourze\JsonRPC\Core\Tests\Contracts;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Contracts\RequestHandlerInterface;
+use Tourze\JsonRPC\Core\Contracts\RpcParamInterface;
+use Tourze\JsonRPC\Core\Contracts\RpcResultInterface;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
+use Tourze\JsonRPC\Core\Result\SuccessResult;
 use Tourze\JsonRPC\Core\Exception\JsonRpcMethodNotFoundException;
 use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
 /**
- * 测试RequestHandlerInterface接口.
+ * 测试 RequestHandlerInterface 接口
  *
  * @internal
  */
@@ -23,16 +26,17 @@ final class RequestHandlerInterfaceTest extends TestCase
     private function createMockMethod(): JsonRpcMethodInterface
     {
         return new class implements JsonRpcMethodInterface {
-            public function __invoke(JsonRpcRequest $request): mixed
+            public function __invoke(JsonRpcRequest $request): RpcResultInterface
             {
                 $params = $request->getParams();
+                $echoData = null !== $params ? $params->all() : [];
 
-                return ['echo' => null !== $params ? $params->all() : []];
+                return new SuccessResult(success: true, message: json_encode(['echo' => $echoData]));
             }
 
-            public function execute(): array
+            public function execute(RpcParamInterface $param): RpcResultInterface
             {
-                return ['echo' => []];
+                return new SuccessResult(success: true, message: json_encode(['echo' => []]));
             }
         };
     }
@@ -120,7 +124,8 @@ final class RequestHandlerInterfaceTest extends TestCase
 
         // 验证返回的方法可以被调用
         $result = $method($request);
-        $this->assertEquals(['echo' => ['message' => 'Hello']], $result);
+        $this->assertInstanceOf(RpcResultInterface::class, $result);
+        $this->assertInstanceOf(SuccessResult::class, $result);
     }
 
     public function testResolveMethodWithComplexRequest(): void
@@ -142,8 +147,7 @@ final class RequestHandlerInterfaceTest extends TestCase
 
         // 验证方法可以处理复杂参数
         $result = $method($request);
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('echo', $result);
+        $this->assertInstanceOf(RpcResultInterface::class, $result);
     }
 
     public function testResolveMethodExceptionContext(): void

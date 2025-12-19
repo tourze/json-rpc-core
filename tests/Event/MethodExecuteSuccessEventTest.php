@@ -8,6 +8,9 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Tourze\JsonRPC\Core\Contracts\RpcParamInterface;
+use Tourze\JsonRPC\Core\Contracts\RpcResultInterface;
+use Tourze\JsonRPC\Core\Result\SuccessResult;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Event\AbstractOnMethodEvent;
 use Tourze\JsonRPC\Core\Event\JsonRpcServerEvent;
@@ -26,14 +29,14 @@ final class MethodExecuteSuccessEventTest extends TestCase
     private function createMockMethod(): JsonRpcMethodInterface
     {
         return new class implements JsonRpcMethodInterface {
-            public function __invoke(JsonRpcRequest $request): mixed
+            public function __invoke(JsonRpcRequest $request): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
 
-            public function execute(): array
+            public function execute(RpcParamInterface $param): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
         };
     }

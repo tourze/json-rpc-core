@@ -24,7 +24,7 @@ final class MethodExecutingEventTest extends AbstractEventTestCase
 {
     public function testSetAndGetItem(): void
     {
-        $event = new class extends MethodExecutingEvent {};
+        $event = new MethodExecutingEvent(new JsonRpcRequest());
         $request = new JsonRpcRequest();
         $request->setMethod('user.create');
         $request->setId('123');
@@ -39,7 +39,7 @@ final class MethodExecutingEventTest extends AbstractEventTestCase
 
     public function testSetAndGetResponse(): void
     {
-        $event = new class extends MethodExecutingEvent {};
+        $event = new MethodExecutingEvent(new JsonRpcRequest());
         $response = new JsonRpcResponse();
         $response->setResult(['success' => true]);
         $response->setId('456');
@@ -56,7 +56,7 @@ final class MethodExecutingEventTest extends AbstractEventTestCase
 
     public function testResponseCanBeSetToNull(): void
     {
-        $event = new class extends MethodExecutingEvent {};
+        $event = new MethodExecutingEvent(new JsonRpcRequest());
         $response = new JsonRpcResponse();
         $response->setResult(['data' => 'test']);
 
@@ -69,7 +69,7 @@ final class MethodExecutingEventTest extends AbstractEventTestCase
 
     public function testCompleteEventSetup(): void
     {
-        $event = new class extends MethodExecutingEvent {};
+        $event = new MethodExecutingEvent(new JsonRpcRequest());
 
         // 创建请求
         $request = new JsonRpcRequest();
@@ -101,14 +101,14 @@ final class MethodExecutingEventTest extends AbstractEventTestCase
 
     public function testEventInheritance(): void
     {
-        $event = new class extends MethodExecutingEvent {};
+        $event = new MethodExecutingEvent(new JsonRpcRequest());
 
         $this->assertInstanceOf(Event::class, $event);
     }
 
     public function testEventWithNotificationRequest(): void
     {
-        $event = new class extends MethodExecutingEvent {};
+        $event = new MethodExecutingEvent(new JsonRpcRequest());
         $request = new JsonRpcRequest();
         $request->setMethod('log.info');
         $request->setParams(new JsonRpcParams(['message' => 'User logged in']));
@@ -123,7 +123,7 @@ final class MethodExecutingEventTest extends AbstractEventTestCase
 
     public function testEventWithErrorResponse(): void
     {
-        $event = new class extends MethodExecutingEvent {};
+        $event = new MethodExecutingEvent(new JsonRpcRequest());
 
         $request = new JsonRpcRequest();
         $request->setMethod('invalid.method');
@@ -151,7 +151,7 @@ final class MethodExecutingEventTest extends AbstractEventTestCase
 
     public function testMultipleRequestUpdates(): void
     {
-        $event = new class extends MethodExecutingEvent {};
+        $event = new MethodExecutingEvent(new JsonRpcRequest());
 
         // 第一个请求
         $request1 = new JsonRpcRequest();
@@ -173,21 +173,18 @@ final class MethodExecutingEventTest extends AbstractEventTestCase
 
     public function testEventClassStructure(): void
     {
-        $event = new class extends MethodExecutingEvent {};
-        $reflection = new \ReflectionClass($event);
+        $reflection = new \ReflectionClass(MethodExecutingEvent::class);
 
-        // 验证匿名类的属性
+        $this->assertTrue($reflection->isFinal());
         $this->assertFalse($reflection->isAbstract());
         $this->assertTrue($reflection->isInstantiable());
-        $this->assertTrue($reflection->isSubclassOf(MethodExecutingEvent::class));
+        $this->assertTrue($reflection->isSubclassOf(Event::class));
 
-        // 验证父类的属性（私有属性在子类中不可见，但继承的方法可以访问）
-        $parentReflection = new \ReflectionClass(MethodExecutingEvent::class);
-        $this->assertTrue($parentReflection->hasProperty('item'));
-        $this->assertTrue($parentReflection->hasProperty('response'));
-        $this->assertTrue($parentReflection->hasMethod('getItem'));
-        $this->assertTrue($parentReflection->hasMethod('setItem'));
-        $this->assertTrue($parentReflection->hasMethod('getResponse'));
-        $this->assertTrue($parentReflection->hasMethod('setResponse'));
+        $this->assertTrue($reflection->hasProperty('item'));
+        $this->assertTrue($reflection->hasProperty('response'));
+        $this->assertTrue($reflection->hasMethod('getItem'));
+        $this->assertTrue($reflection->hasMethod('setItem'));
+        $this->assertTrue($reflection->hasMethod('getResponse'));
+        $this->assertTrue($reflection->hasMethod('setResponse'));
     }
 }

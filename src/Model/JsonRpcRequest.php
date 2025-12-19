@@ -6,7 +6,7 @@ namespace Tourze\JsonRPC\Core\Model;
 
 use Tourze\JsonRPC\Core\Exception\JsonRpcArgumentException;
 
-class JsonRpcRequest implements \Stringable
+final class JsonRpcRequest implements \Stringable
 {
     /**
      * @var string JSONRPC协议版本

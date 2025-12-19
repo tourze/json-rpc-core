@@ -6,6 +6,9 @@ namespace Tourze\JsonRPC\Core\Tests\Event;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Tourze\JsonRPC\Core\Contracts\RpcParamInterface;
+use Tourze\JsonRPC\Core\Contracts\RpcResultInterface;
+use Tourze\JsonRPC\Core\Result\SuccessResult;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Event\AbstractOnMethodEvent;
 use Tourze\JsonRPC\Core\Event\JsonRpcServerEvent;
@@ -13,7 +16,7 @@ use Tourze\JsonRPC\Core\Model\JsonRpcParams;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 
 /**
- * 测试AbstractOnMethodEvent抽象事件类.
+ * 测试 AbstractOnMethodEvent 抽象事件类
  *
  * @internal
  */
@@ -30,14 +33,14 @@ final class AbstractOnMethodEventTest extends TestCase
     private function createMockMethod(): JsonRpcMethodInterface
     {
         return new class implements JsonRpcMethodInterface {
-            public function __invoke(JsonRpcRequest $request): mixed
+            public function __invoke(JsonRpcRequest $request): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
 
-            public function execute(): array
+            public function execute(RpcParamInterface $param): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
         };
     }

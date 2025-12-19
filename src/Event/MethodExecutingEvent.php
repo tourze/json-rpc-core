@@ -8,9 +8,15 @@ use Symfony\Contracts\EventDispatcher\Event;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 use Tourze\JsonRPC\Core\Model\JsonRpcResponse;
 
-abstract class MethodExecutingEvent extends Event
+final class MethodExecutingEvent extends Event
 {
     private JsonRpcRequest $item;
+
+    public function __construct(JsonRpcRequest $item, ?JsonRpcResponse $response = null)
+    {
+        $this->item = $item;
+        $this->response = $response;
+    }
 
     public function getItem(): JsonRpcRequest
     {

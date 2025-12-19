@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\JsonRPC\Core\Tests\PHPStan\Rules\Data;
 
+use Tourze\JsonRPC\Core\Contracts\RpcParamInterface;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Exception\ApiException;
 use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
@@ -19,7 +20,7 @@ class ValidApiExceptionThrow implements JsonRpcMethodInterface
         return [];
     }
 
-    public function execute(): array
+    public function execute(RpcParamInterface $param): mixed
     {
         return [];
     }

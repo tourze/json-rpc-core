@@ -7,12 +7,20 @@ namespace Tourze\JsonRPC\Core\Event;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\EventDispatcher\Event;
 
-abstract class RequestStartEvent extends Event
+final class RequestStartEvent extends Event
 {
     /**
      * @var string 接收的JsonRPC字符串
      */
-    private string $payload;
+    private string $payload = '';
+
+    private ?Request $request = null;
+
+    public function __construct(?Request $request = null, string $payload = '')
+    {
+        $this->request = $request;
+        $this->payload = $payload;
+    }
 
     public function getPayload(): string
     {
@@ -23,8 +31,6 @@ abstract class RequestStartEvent extends Event
     {
         $this->payload = $payload;
     }
-
-    private ?Request $request;
 
     public function getRequest(): ?Request
     {

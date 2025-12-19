@@ -3,15 +3,16 @@
 namespace Tourze\JsonRPC\Core\Tests\Serialization;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Tourze\JsonRPC\Core\Exception\JsonRpcInvalidRequestException;
 use Tourze\JsonRPC\Core\Exception\JsonRpcParseErrorException;
-use Tourze\JsonRPC\Core\Model\JsonRpcCallRequest;
 use Tourze\JsonRPC\Core\Model\JsonRpcCallResponse;
+use Tourze\JsonRPC\Core\Model\JsonRpcResponse;
 use Tourze\JsonRPC\Core\Serialization\JsonRpcCallDenormalizer;
 use Tourze\JsonRPC\Core\Serialization\JsonRpcCallResponseNormalizer;
 use Tourze\JsonRPC\Core\Serialization\JsonRpcCallSerializer;
+use Tourze\JsonRPC\Core\Serialization\JsonRpcRequestDenormalizer;
+use Tourze\JsonRPC\Core\Serialization\JsonRpcResponseNormalizer;
 
 /**
  * @internal
@@ -21,35 +22,36 @@ final class JsonRpcCallSerializerTest extends TestCase
 {
     private JsonRpcCallSerializer $serializer;
 
-    private MockObject&JsonRpcCallDenormalizer $callDenormalizer;
+    private JsonRpcCallDenormalizer $callDenormalizer;
 
-    private MockObject&JsonRpcCallResponseNormalizer $callResponseNormalizer;
+    private JsonRpcCallResponseNormalizer $callResponseNormalizer;
 
     protected function setUp(): void
     {
-        // 创建mock对象
-        $this->callDenormalizer = $this->createMock(JsonRpcCallDenormalizer::class);
-        $this->callResponseNormalizer = $this->createMock(JsonRpcCallResponseNormalizer::class);
+        // 使用真实的依赖实例
+        $requestDenormalizer = new JsonRpcRequestDenormalizer();
+        $responseNormalizer = new JsonRpcResponseNormalizer();
 
-        // 直接创建JsonRpcCallSerializer实例（使用mock依赖）
+        $this->callDenormalizer = new JsonRpcCallDenormalizer($requestDenormalizer);
+        $this->callResponseNormalizer = new JsonRpcCallResponseNormalizer($responseNormalizer);
+
+        // 创建 JsonRpcCallSerializer 实例
         $this->serializer = new JsonRpcCallSerializer($this->callDenormalizer, $this->callResponseNormalizer);
     }
 
     public function testDeserializeWithValidJsonReturnsCallRequest(): void
     {
         $content = '{"jsonrpc":"2.0","method":"test","id":1}';
-        $decodedContent = ['jsonrpc' => '2.0', 'method' => 'test', 'id' => 1];
-        $callRequest = new JsonRpcCallRequest();
-
-        $this->callDenormalizer->expects($this->once())
-            ->method('denormalize')
-            ->with($decodedContent)
-            ->willReturn($callRequest)
-        ;
 
         $result = $this->serializer->deserialize($content);
 
-        $this->assertSame($callRequest, $result);
+        $this->assertFalse($result->isBatch());
+        $this->assertCount(1, $result->getItemList());
+
+        $request = $result->getItemList()[0];
+        $this->assertSame('2.0', $request->getJsonrpc());
+        $this->assertSame('test', $request->getMethod());
+        $this->assertSame(1, $request->getId());
     }
 
     public function testDeserializeWithInvalidJsonThrowsParseErrorException(): void
@@ -78,38 +80,24 @@ final class JsonRpcCallSerializerTest extends TestCase
 
     public function testSerializeWithValidResponseReturnsJsonString(): void
     {
-        // 使用JsonRpcCallResponse具体类模拟的原因：
-        // 1) 它是数据传输对象(DTO)，不需要抽象接口
-        // 2) 测试需要验证其具体的数据结构和行为
-        // 3) 它是标准协议的实现，创建接口没有实际意义
-        $callResponse = $this->createMock(JsonRpcCallResponse::class);
-        $normalizedData = ['jsonrpc' => '2.0', 'result' => 'test', 'id' => 1];
+        // 使用真实的 JsonRpcResponse 和 JsonRpcCallResponse 实例
+        $response = new JsonRpcResponse();
+        $response->setId(1);
+        $response->setResult('test');
 
-        $this->callResponseNormalizer->expects($this->once())
-            ->method('normalize')
-            ->with($callResponse)
-            ->willReturn($normalizedData)
-        ;
+        $callResponse = new JsonRpcCallResponse(false);
+        $callResponse->addResponse($response);
 
         $result = $this->serializer->serialize($callResponse);
 
-        $expectedJson = json_encode($normalizedData, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        $expectedJson = '{"jsonrpc":"2.0","id":1,"result":"test"}';
         $this->assertSame($expectedJson, $result);
     }
 
     public function testSerializeWithNullNormalizedDataReturnsNullJsonString(): void
     {
-        // 使用JsonRpcCallResponse具体类模拟的原因：
-        // 1) 它是数据传输对象(DTO)，不需要抽象接口
-        // 2) 测试需要验证其具体的数据结构和行为
-        // 3) 它是标准协议的实现，创建接口没有实际意义
-        $callResponse = $this->createMock(JsonRpcCallResponse::class);
-
-        $this->callResponseNormalizer->expects($this->once())
-            ->method('normalize')
-            ->with($callResponse)
-            ->willReturn(null)
-        ;
+        // 使用真实的 JsonRpcCallResponse 实例，不添加任何响应
+        $callResponse = new JsonRpcCallResponse(false);
 
         $result = $this->serializer->serialize($callResponse);
 
@@ -151,36 +139,33 @@ final class JsonRpcCallSerializerTest extends TestCase
     public function testDenormalizeWithValidDataReturnsCallRequest(): void
     {
         $data = ['jsonrpc' => '2.0', 'method' => 'test', 'id' => 1];
-        $callRequest = new JsonRpcCallRequest();
-
-        $this->callDenormalizer->expects($this->once())
-            ->method('denormalize')
-            ->with($data)
-            ->willReturn($callRequest)
-        ;
 
         $result = $this->serializer->denormalize($data);
 
-        $this->assertSame($callRequest, $result);
+        $this->assertFalse($result->isBatch());
+        $this->assertCount(1, $result->getItemList());
+
+        $request = $result->getItemList()[0];
+        $this->assertSame('2.0', $request->getJsonrpc());
+        $this->assertSame('test', $request->getMethod());
+        $this->assertSame(1, $request->getId());
     }
 
     public function testNormalizeWithValidResponseReturnsNormalizedData(): void
     {
-        // 使用JsonRpcCallResponse具体类模拟的原因：
-        // 1) 它是数据传输对象(DTO)，不需要抽象接口
-        // 2) 测试需要验证其具体的数据结构和行为
-        // 3) 它是标准协议的实现，创建接口没有实际意义
-        $callResponse = $this->createMock(JsonRpcCallResponse::class);
-        $normalizedData = ['jsonrpc' => '2.0', 'result' => 'test', 'id' => 1];
+        // 使用真实的 JsonRpcResponse 和 JsonRpcCallResponse 实例
+        $response = new JsonRpcResponse();
+        $response->setId(1);
+        $response->setResult('test');
 
-        $this->callResponseNormalizer->expects($this->once())
-            ->method('normalize')
-            ->with($callResponse)
-            ->willReturn($normalizedData)
-        ;
+        $callResponse = new JsonRpcCallResponse(false);
+        $callResponse->addResponse($response);
 
         $result = $this->serializer->normalize($callResponse);
 
-        $this->assertSame($normalizedData, $result);
+        $this->assertIsArray($result);
+        $this->assertSame('2.0', $result['jsonrpc']);
+        $this->assertSame('test', $result['result']);
+        $this->assertSame(1, $result['id']);
     }
 }

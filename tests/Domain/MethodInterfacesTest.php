@@ -9,6 +9,9 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Validator\Constraints\Collection;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Type;
+use Tourze\JsonRPC\Core\Contracts\RpcParamInterface;
+use Tourze\JsonRPC\Core\Contracts\RpcResultInterface;
+use Tourze\JsonRPC\Core\Result\SuccessResult;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodParamsValidatorInterface;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodResolverInterface;
@@ -41,14 +44,14 @@ final class MethodInterfacesTest extends TestCase
         $request->setParams(new JsonRpcParams(['test' => 'value']));
 
         $method = new class implements JsonRpcMethodInterface {
-            public function __invoke(JsonRpcRequest $request): mixed
+            public function __invoke(JsonRpcRequest $request): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
 
-            public function execute(): array
+            public function execute(RpcParamInterface $param): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
         };
 
@@ -58,19 +61,19 @@ final class MethodInterfacesTest extends TestCase
     }
 
     /**
-     * 测试方法解析器接口.
+     * 测试方法解析器接口
      */
     public function testMethodResolverInterface(): void
     {
         $testMethod = new class implements JsonRpcMethodInterface {
-            public function __invoke(JsonRpcRequest $request): mixed
+            public function __invoke(JsonRpcRequest $request): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
 
-            public function execute(): array
+            public function execute(RpcParamInterface $param): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
         };
 
@@ -100,23 +103,23 @@ final class MethodInterfacesTest extends TestCase
         $request->setParams(new JsonRpcParams());
 
         $result = $method($request);
-        $this->assertEquals(['success' => true], $result);
+        $this->assertInstanceOf(RpcResultInterface::class, $result);
     }
 
     /**
-     * 测试带有结果文档的方法接口.
+     * 测试带有结果文档的方法接口
      */
     public function testMethodWithResultDocInterface(): void
     {
         $method = new class implements JsonRpcMethodInterface, MethodWithResultDocInterface {
-            public function __invoke(JsonRpcRequest $request): mixed
+            public function __invoke(JsonRpcRequest $request): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
 
-            public function execute(): array
+            public function execute(RpcParamInterface $param): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
 
             public function resultDoc(): string
@@ -129,19 +132,19 @@ final class MethodInterfacesTest extends TestCase
     }
 
     /**
-     * 测试带有参数验证的方法接口.
+     * 测试带有参数验证的方法接口
      */
     public function testMethodWithValidatedParamsInterface(): void
     {
         $method = new class implements JsonRpcMethodInterface, MethodWithValidatedParamsInterface {
-            public function __invoke(JsonRpcRequest $request): mixed
+            public function __invoke(JsonRpcRequest $request): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
 
-            public function execute(): array
+            public function execute(RpcParamInterface $param): RpcResultInterface
             {
-                return ['success' => true];
+                return new SuccessResult(success: true);
             }
 
             public function getParamsConstraint(): Collection

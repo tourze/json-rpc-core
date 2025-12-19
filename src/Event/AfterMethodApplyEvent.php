@@ -10,7 +10,7 @@ use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 /**
  * 在JsonRPC方法执行后触发.
  */
-class AfterMethodApplyEvent extends MethodInterruptEvent
+final class AfterMethodApplyEvent extends MethodInterruptEvent
 {
     private JsonRpcParams $params;
 

@@ -6,7 +6,10 @@ namespace Tourze\JsonRPC\Core\Tests\Event;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Contracts\EventDispatcher\Event;
+use Tourze\JsonRPC\Core\Contracts\RpcParamInterface;
+use Tourze\JsonRPC\Core\Contracts\RpcResultInterface;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
+use Tourze\JsonRPC\Core\Result\SuccessResult;
 use Tourze\JsonRPC\Core\Event\AfterMethodApplyEvent;
 use Tourze\JsonRPC\Core\Event\BeforeMethodApplyEvent;
 use Tourze\JsonRPC\Core\Event\MethodInterruptEvent;
@@ -24,14 +27,14 @@ final class MethodInterruptEventTest extends AbstractEventTestCase
     private function createMockMethod(): JsonRpcMethodInterface
     {
         return new class implements JsonRpcMethodInterface {
-            public function __invoke(JsonRpcRequest $request): mixed
+            public function __invoke(JsonRpcRequest $request): RpcResultInterface
             {
-                return ['intercepted' => true];
+                return new SuccessResult(success: true, message: 'intercepted');
             }
 
-            public function execute(): array
+            public function execute(RpcParamInterface $param): RpcResultInterface
             {
-                return ['intercepted' => true];
+                return new SuccessResult(success: true, message: 'intercepted');
             }
         };
     }
@@ -80,7 +83,9 @@ final class MethodInterruptEventTest extends AbstractEventTestCase
         $request = new JsonRpcRequest();
         $result = $event->getMethod()($request);
 
-        $this->assertEquals(['intercepted' => true], $result);
+        $this->assertInstanceOf(RpcResultInterface::class, $result);
+        $this->assertInstanceOf(SuccessResult::class, $result);
+        $this->assertSame('intercepted', $result->message);
     }
 
     public function testMultipleMethodAssignments(): void
@@ -89,14 +94,14 @@ final class MethodInterruptEventTest extends AbstractEventTestCase
 
         $method1 = $this->createMockMethod();
         $method2 = new class implements JsonRpcMethodInterface {
-            public function __invoke(JsonRpcRequest $request): mixed
+            public function __invoke(JsonRpcRequest $request): RpcResultInterface
             {
-                return ['method2' => true];
+                return new SuccessResult(success: true, message: 'method2');
             }
 
-            public function execute(): array
+            public function execute(RpcParamInterface $param): RpcResultInterface
             {
-                return ['method2' => true];
+                return new SuccessResult(success: true, message: 'method2');
             }
         };
 
@@ -159,9 +164,12 @@ final class MethodInterruptEventTest extends AbstractEventTestCase
 
         $event->setMethod($method);
 
-        // 测试方法的execute方法
-        $result = $event->getMethod()->execute();
-        $this->assertEquals(['intercepted' => true], $result);
+        // 测试方法的 __invoke 方法（execute 需要参数对象）
+        $request = new JsonRpcRequest();
+        $result = $event->getMethod()($request);
+        $this->assertInstanceOf(RpcResultInterface::class, $result);
+        $this->assertInstanceOf(SuccessResult::class, $result);
+        $this->assertSame('intercepted', $result->message);
     }
 
     public function testEventDocumentation(): void
