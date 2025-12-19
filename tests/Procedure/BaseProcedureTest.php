@@ -5,23 +5,21 @@ declare(strict_types=1);
 namespace Tourze\JsonRPC\Core\Tests\Procedure;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use Tourze\JsonRPC\Core\Result\ArrayResult;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\Validator\Constraints\Collection;
 use Symfony\Contracts\Service\ServiceSubscriberInterface;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
-use Tourze\JsonRPC\Core\Attribute\MethodParam;
 use Tourze\JsonRPC\Core\Attribute\MethodTag;
 use Tourze\JsonRPC\Core\Contracts\RpcParamInterface;
 use Tourze\JsonRPC\Core\Contracts\RpcResultInterface;
-use Tourze\JsonRPC\Core\Result\SuccessResult;
 use Tourze\JsonRPC\Core\Domain\JsonRpcMethodInterface;
 use Tourze\JsonRPC\Core\Domain\MethodWithResultDocInterface;
-use Tourze\JsonRPC\Core\Tests\Fixtures\TestProcedureParam;
 use Tourze\JsonRPC\Core\Domain\MethodWithValidatedParamsInterface;
 use Tourze\JsonRPC\Core\Procedure\BaseProcedure;
-use Tourze\JsonRPC\Core\Tests\AbstractProcedureTestCase;
+use Tourze\JsonRPC\Core\Result\SuccessResult;
+use Tourze\JsonRPC\Core\Tests\Fixtures\TestProcedureParam;
+use Tourze\PHPUnitJsonRPC\AbstractProcedureTestCase;
 
 /**
  * 测试 BaseProcedure 抽象类 - 参数对象模式
@@ -57,7 +55,7 @@ final class BaseProcedureTest extends AbstractProcedureTestCase
 
                 return new SuccessResult(
                     success: true,
-                    message: $encoded !== false ? $encoded : null
+                    message: false !== $encoded ? $encoded : null
                 );
             }
         };

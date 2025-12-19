@@ -12,7 +12,7 @@ use Symfony\Component\Validator\Constraints\Collection;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Tourze\JsonRPC\Core\Exception\ApiException;
 
-class ParameterProcessor
+readonly class ParameterProcessor
 {
     public function __construct(
         private PropertyAccessor $propertyAccessor,
